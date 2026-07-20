@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Scan | AuraScan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo"><i data-lucide="microscope" class="clinic-icon"></i><a href="{{ url_for('web.index') }}" class="home-link">AURA<span class="logo-highlight">Scan</span></a></div>
+            <a href="{{ url_for('web.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left"></i> Back to overview</a>
+        </div>
+    </header>
+    <main class="main-content upload-page">
+        <section class="upload-page-intro">
+            <p class="eyebrow">Step 1 of 3</p>
+            <h1>Upload an X-ray image</h1>
+            <p>Choose a PNG or JPG chest/lung scan to begin the analysis.</p>
+        </section>
+        <section class="upload-section">
+            <div class="glass-card upload-container" id="dropzone">
+                <input type="file" id="file-input" accept=".png,.jpg,.jpeg" hidden>
+                <div class="upload-prompt">
+                    <div class="icon-pulse"><i data-lucide="cloud-upload" class="upload-icon"></i></div>
+                    <h2>Attach patient X-ray</h2>
+                    <div class="file-spec">PNG and JPG files up to 10MB</div>
+                    <div class="upload-composer" id="upload-composer">
+                        <input type="text" id="upload-note" placeholder="Add an optional note about this scan">
+                        <label for="file-input" class="attachment-button" title="Attach an X-ray image" aria-label="Attach an X-ray image"><i data-lucide="paperclip"></i></label>
+                    </div>
+                </div>
+                <div class="upload-progress-container" id="progress-container" hidden>
+                    <div class="progress-info"><span id="filename-display">patient_xray.png</span><span id="percent-display">0%</span></div>
+                    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                    <div class="analysis-status" id="status-display"><i data-lucide="loader-circle" class="icon-spin"></i> Running image enhancement...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

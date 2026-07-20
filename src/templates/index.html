@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered X-Ray Diagnostic Hub | Group O</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo">
+                <i data-lucide="microscope" class="clinic-icon"></i>
+                <span>AURA<span class="logo-highlight">Scan</span></span>
+            </div>
+            <nav class="nav-links">
+                <a href="#workflow" class="nav-link">How it works</a>
+                <a href="https://github.com" target="_blank" class="nav-link"><i data-lucide="github"></i> GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-section">
+            <p class="eyebrow">Clinical decision-support workspace</p>
+            <h1 class="hero-title">Clearer review for <br><span class="gradient-text">chest X-ray diagnostics</span></h1>
+            <p class="hero-subtitle">
+                AuraScan brings traditional feature analysis and neural-network outputs into one structured review, with a clear report and follow-up assistant.
+            </p>
+            <a href="{{ url_for('web.upload_page') }}" class="btn btn-primary hero-cta">Get started <i data-lucide="arrow-right"></i></a>
+        </section>
+
+        <section class="workflow-section" id="workflow">
+            <h2 class="section-title text-center">A focused review workflow</h2>
+            <div class="grid-container triple-col">
+                <article class="glass-card workflow-card">
+                    <span class="step-number">01</span>
+                    <i data-lucide="upload" class="workflow-icon"></i>
+                    <h3>Upload a scan</h3>
+                    <p>Attach a supported chest X-ray image and add an optional review note.</p>
+                </article>
+                <article class="glass-card workflow-card">
+                    <span class="step-number">02</span>
+                    <i data-lucide="scan-search" class="workflow-icon"></i>
+                    <h3>Review analysis</h3>
+                    <p>Compare model confidence, extracted features, and attention-map output.</p>
+                </article>
+                <article class="glass-card workflow-card">
+                    <span class="step-number">03</span>
+                    <i data-lucide="message-square" class="workflow-icon"></i>
+                    <h3>Understand the report</h3>
+                    <p>Read the structured summary and ask follow-up questions in context.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Recess Project Group O. BSE2301 Software Engineering Mini Project 2.</p>
+            <p>Academic supervisor contact: <a href="mailto:jeff.geoff.mis@gmail.com">jeff.geoff.mis@gmail.com</a></p>
+        </div>
+    </footer>
+
+    <div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- JS Scripts -->
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
