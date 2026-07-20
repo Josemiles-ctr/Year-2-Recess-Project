@@ -1,35 +1,47 @@
-from flask import Blueprint, request, jsonify, render_template, session, redirect, url_for, current_app
+from flask import (
+    Blueprint,
+    request,
+    jsonify,
+    render_template,
+    session,
+    redirect,
+    url_for,
+    current_app,
+)
 
-web_bp = Blueprint('web', __name__)
+web_bp = Blueprint("web", __name__)
 
-@web_bp.route('/')
+
+@web_bp.route("/")
 def index():
     """Task Assignee Implementation steps:
     1. Render and return the home landing page template (index.html).
     """
     # Placeholder: Renders the home screen
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@web_bp.route('/upload')
+@web_bp.route("/upload")
 def upload_page():
     """Render the dedicated scan-upload workspace."""
-    return render_template('upload.html')
+    return render_template("upload.html")
 
-@web_bp.route('/report')
+
+@web_bp.route("/report")
 def report_page():
     """Task Assignee Implementation steps:
     1. Check if 'active_prediction' details exist inside the cookie session.
     2. If missing, redirect the browser to the upload landing page.
     3. If present, render the diagnostics dashboard template (report.html), passing session details.
     """
-    report_data = session.get('active_prediction')
+    report_data = session.get("active_prediction")
     if not report_data:
-        return redirect(url_for('web.upload_page'))
+        return redirect(url_for("web.upload_page"))
 
-    return render_template('report.html', data=report_data)
+    return render_template("report.html", data=report_data)
 
-@web_bp.route('/api/analyze', methods=['POST'])
+
+@web_bp.route("/api/analyze", methods=["POST"])
 def analyze_scan():
     """Task Assignee Implementation steps:
     1. Check if 'file' exists in the request.files dictionary. If not, return a 400 Bad Request error.
@@ -41,27 +53,28 @@ def analyze_scan():
        - Reset the conversational log by clearing session['chat_history'].
     6. Return the dictionary back to the client as a JSON payload.
     """
-    if 'file' not in request.files:
+    if "file" not in request.files:
         return jsonify({"status": "error", "message": "No file uploaded."}), 400
-        
-    file = request.files['file']
-    if file.filename == '':
+
+    file = request.files["file"]
+    if file.filename == "":
         return jsonify({"status": "error", "message": "No file selected."}), 400
 
     # Placeholder: Invoke the injected controller to process the upload
     try:
-        controller = current_app.config['ANALYZE_CONTROLLER']
+        controller = current_app.config["ANALYZE_CONTROLLER"]
         response_data = controller.handle_upload(file.filename, file.read())
-        
+
         if response_data["status"] == "success":
-            session['active_prediction'] = response_data
-            session['chat_history'] = []
-            
+            session["active_prediction"] = response_data
+            session["chat_history"] = []
+
         return jsonify(response_data)
     except Exception as e:
         return jsonify({"status": "error", "message": f"Routing/Controller error: {str(e)}"}), 500
 
-@web_bp.route('/api/chat', methods=['POST'])
+
+@web_bp.route("/api/chat", methods=["POST"])
 def chat_assistant():
     """Task Assignee Implementation steps:
     1. Parse user queries from request.get_json().
@@ -76,45 +89,46 @@ def chat_assistant():
     8. Return response payload as JSON.
     """
     data = request.get_json() or {}
-    message = data.get('message')
+    message = data.get("message")
     if not message:
         return jsonify({"status": "error", "message": "Empty query."}), 400
 
-    report_data = session.get('active_prediction')
+    report_data = session.get("active_prediction")
     if not report_data:
         return jsonify({"status": "error", "message": "No active scan context."}), 400
 
     # Placeholder: Invoke the injected controller to execute follow-up dialogues
     try:
-        controller = current_app.config['CHAT_CONTROLLER']
-        chat_history = session.get('chat_history', [])
-        
+        controller = current_app.config["CHAT_CONTROLLER"]
+        chat_history = session.get("chat_history", [])
+
         diagnostic_context = {
             "verdict": report_data["consensus"]["verdict"],
             "risk_level": report_data["consensus"]["risk_level"],
             "traditional_prediction": report_data["traditional_model"]["prediction"],
             "traditional_confidence": report_data["traditional_model"]["confidence"],
             "cnn_prediction": report_data["cnn_model"]["prediction"],
-            "cnn_confidence": report_data["cnn_model"]["confidence"]
+            "cnn_confidence": report_data["cnn_model"]["confidence"],
         }
 
         result = controller.handle_message(chat_history, message, diagnostic_context)
-        
+
         if result["status"] == "success":
             chat_history.append({"role": "user", "content": message})
             chat_history.append({"role": "assistant", "content": result["response"]["content"]})
-            session['chat_history'] = chat_history
-            
+            session["chat_history"] = chat_history
+
         return jsonify(result)
     except Exception as e:
         return jsonify({"status": "error", "message": f"Routing/Controller error: {str(e)}"}), 500
 
-@web_bp.route('/api/chat/clear', methods=['POST'])
+
+@web_bp.route("/api/chat/clear", methods=["POST"])
 def clear_chat():
     """Task Assignee Implementation steps:
     1. Clear or overwrite session['chat_history'] to empty list.
     2. Return success response status.
     """
     # Placeholder: Empty the chat array
-    session['chat_history'] = []
+    session["chat_history"] = []
     return jsonify({"status": "success", "message": "Chat cleared."})

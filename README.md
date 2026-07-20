@@ -201,6 +201,18 @@ Open your browser and navigate to http://127.0.0.1:5000/.
 
 ---
 
+## Security
+
+- Keep real credentials only in a local `.env` file; it is excluded from version control.
+- GitHub Actions runs TruffleHog on every push, pull request, and manual workflow dispatch to detect exposed credentials. See the [TruffleHog GitHub Action documentation](https://github.com/trufflesecurity/trufflehog#-trufflehog-github-action) for scan behaviour and configuration.
+- If a credential is exposed, revoke or rotate it immediately; removing it from a later commit does not invalidate it.
+
+## Code formatting
+
+Python code is formatted and linted with Ruff. Run `ruff format src` to apply formatting locally, then `ruff check src` to check basic errors. GitHub Actions enforces both checks on every push and pull request. See the [Ruff formatter documentation](https://docs.astral.sh/ruff/formatter/) for editor setup and behaviour.
+
+---
+
 ## Group Members & Contact Information
 We are Group O for BSE2301 Mini Project 2. Replace the placeholders below with your group details.
 

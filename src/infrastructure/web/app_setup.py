@@ -5,14 +5,19 @@ from dotenv import load_dotenv
 from flask import Flask
 
 from src.infrastructure.web.routes import web_bp
-from src.infrastructure.simulation import SimulatedCnnModel, SimulatedLlmService, SimulatedTraditionalModel
+from src.infrastructure.simulation import (
+    SimulatedCnnModel,
+    SimulatedLlmService,
+    SimulatedTraditionalModel,
+)
 from src.interfaces.controllers import AnalyzeController, ChatController
 from src.use_cases.chat import ChatWithAssistantUseCase
 from src.use_cases.predict import PredictCancerUseCase
 
+
 def create_app() -> Flask:
     """Application factory that wires together Clean Architecture dependencies and starts Flask.
-    
+
     Assignee Guidelines:
     1. Read environmental settings (.env configurations).
     2. Initialize the Flask application container.

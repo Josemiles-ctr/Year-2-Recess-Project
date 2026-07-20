@@ -1,18 +1,18 @@
 from typing import Dict, Any, List
-from datetime import datetime
 from src.domain.entities import ChatMessage
 from src.use_cases.predict import PredictCancerUseCase
 from src.use_cases.chat import ChatWithAssistantUseCase
 
+
 class AnalyzeController:
     """Controller to adapt file uploads into cancer prediction use cases.
-    
+
     Assignee Guidelines:
     1. Parse files and inputs from HTTP requests.
     2. Invoke prediction use cases.
     3. Transform domain output records into JSON responses.
     """
-    
+
     def __init__(self, predict_use_case: PredictCancerUseCase):
         self.predict_use_case = predict_use_case
 
@@ -54,22 +54,22 @@ class AnalyzeController:
 
 class ChatController:
     """Controller to adapt chat JSON requests into LLM follow-up use cases.
-    
+
     Assignee Guidelines:
     1. Parse user chat queries and histories.
     2. Convert session history entries into domain entities.
     3. Invoke chatbot use cases.
     4. Format chatbot replies for web serialization.
     """
-    
+
     def __init__(self, chat_use_case: ChatWithAssistantUseCase):
         self.chat_use_case = chat_use_case
 
     def handle_message(
-        self, 
-        raw_history: List[Dict[str, str]], 
-        new_message: str, 
-        diagnostic_context: Dict[str, Any]
+        self,
+        raw_history: List[Dict[str, str]],
+        new_message: str,
+        diagnostic_context: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Task Assignee Implementation steps:
         1. Verify that new_message is not empty.
