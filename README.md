@@ -219,7 +219,7 @@ We are Group O for BSE2301 Mini Project 2
 | Member | Registration Number |
 | --- | --- |
 | OTAI JOSEPH| 24/U/23001 |
-| Member 2 | Enter registration number |
+| AKATUKUNDA PRECIOUS PRAISE | 24/U/0147 |
 | Member 3 | Enter registration number |
 | Member 4 | Enter registration number |
 | Member 5 | Enter registration number |
