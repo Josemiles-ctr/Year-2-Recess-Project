@@ -202,15 +202,17 @@ Open your browser and navigate to http://127.0.0.1:5000/.
 ---
 
 ## Group Members & Contact Information
-We are Group O for BSE2301 Mini Project 2:
+We are Group O for BSE2301 Mini Project 2. Replace the placeholders below with your group details.
 
-*   **Group Representative**: [Member Name] — [Reg Number]
-*   **Team Member 2**: [Member Name] — [Reg Number]
-*   **Team Member 3**: [Member Name] — [Reg Number]
-*   **Team Member 4**: [Member Name] — [Reg Number]
-*   **Team Member 5**: [Member Name] — [Reg Number]
+| Member | Registration Number |
+| --- | --- |
+| OTAI JOSEPH| 24/U/23001 |
+| Member 2 | Enter registration number |
+| Member 3 | Enter registration number |
+| Member 4 | Enter registration number |
+| Member 5 | Enter registration number |
 
 For inquiries, support, or class supervisions, please contact:
 *   Email: jeff.geoff.mis@gmail.com
 *   CC: ndigezzalivingstone2@gmail.com
-*   GitHub Repository Link: [Insert Repo Link Here]
+*   GitHub Repository Link: [Repository](https://github.com/Josemiles-ctr/Year-2-Recess-Project)
