@@ -1,10 +1,11 @@
-from typing import Dict, Any
+from typing import Dict
 from src.domain.entities import XRayScan, PredictionResult
 from src.interfaces.gateways import TraditionalModelGateway
 
+
 class SklearnTraditionalModel(TraditionalModelGateway):
     """Approach 1: Feature Extraction + Traditional Machine Learning.
-    
+
     Assignee Guidelines:
     1. Extract numerical feature vectors from chest scan images.
     2. Implement Gray-Level Co-occurrence Matrix (GLCM) for texture parameters (Contrast, Homogeneity).

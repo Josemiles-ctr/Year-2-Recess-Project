@@ -4,17 +4,20 @@ from src.interfaces.gateways import CnnModelGateway
 # TODO: Define your CNN neural network architecture using PyTorch (nn.Module).
 # Ensure it contains Convolutional layers, Max Pooling, and Dense classifiers.
 
+
 class PyTorchCnnModel(CnnModelGateway):
     """Approach 2: Deep Learning CNN (PyTorch).
-    
+
     Assignee Guidelines:
     1. Implement a deep learning architecture using PyTorch.
     2. Define normalization, sizing transformations, and tensor pipelines.
     3. Run forward passes to evaluate malignant vs benign probabilities.
     4. Implement Grad-CAM to highlight spatial feature weights on the scan.
     """
-    
-    def __init__(self, model_path: str = "src/models/cnn_model.pth", temp_dir: str = "src/static/temp"):
+
+    def __init__(
+        self, model_path: str = "src/models/cnn_model.pth", temp_dir: str = "src/static/temp"
+    ):
         self.model_path = model_path
         self.temp_dir = temp_dir
         # TODO: Initialize transformations, target device (CPU/GPU), and prepare placeholders.
