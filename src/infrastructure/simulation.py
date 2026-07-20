@@ -115,7 +115,9 @@ class SimulatedLlmService(LlmServiceGateway):
         elif "risk" in question or "result" in question:
             detail = f"The demonstration consensus is {verdict} with a {risk} simulated risk level."
         else:
-            detail = f"The active demonstration result is {verdict} with a {risk} simulated risk level."
+            detail = (
+                f"The active demonstration result is {verdict} with a {risk} simulated risk level."
+            )
         return (
             f"{detail} This is a simulated application response, not medical advice. "
             "Please consult a qualified clinician for interpretation of an actual scan."

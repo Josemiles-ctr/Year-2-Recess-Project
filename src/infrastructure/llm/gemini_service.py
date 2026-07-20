@@ -2,9 +2,10 @@ from typing import List, Dict, Any
 from src.domain.entities import PredictionResult, ChatMessage
 from src.interfaces.gateways import LlmServiceGateway
 
+
 class GeminiLlmService(LlmServiceGateway):
     """Large Language Model Integration.
-    
+
     Assignee Guidelines:
     1. Connect to an LLM provider (e.g. Google Gemini API or OpenAI API) using environment variables.
     2. Package ML model diagnostics (verdict, probability, contrast, textures) into a prompt template.
@@ -18,9 +19,7 @@ class GeminiLlmService(LlmServiceGateway):
         pass
 
     def generate_report_narrative(
-        self, 
-        traditional_result: PredictionResult, 
-        cnn_result: PredictionResult
+        self, traditional_result: PredictionResult, cnn_result: PredictionResult
     ) -> str:
         """Task Assignee Implementation steps:
         1. Parse predictions and scores from traditional_result and cnn_result.
@@ -33,10 +32,7 @@ class GeminiLlmService(LlmServiceGateway):
         raise NotImplementedError("LLM Report Narrative Generation is not implemented yet.")
 
     def chat_follow_up(
-        self, 
-        history: List[ChatMessage], 
-        new_message: str, 
-        diagnostic_context: Dict[str, Any]
+        self, history: List[ChatMessage], new_message: str, diagnostic_context: Dict[str, Any]
     ) -> str:
         """Task Assignee Implementation steps:
         1. Compile conversation history from the history list into the target API format (user/assistant turns).

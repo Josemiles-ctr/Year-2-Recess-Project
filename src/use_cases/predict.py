@@ -1,9 +1,10 @@
 from src.domain.entities import DiagnosticReport, XRayScan
 from src.interfaces.gateways import TraditionalModelGateway, CnnModelGateway, LlmServiceGateway
 
+
 class PredictCancerUseCase:
     """Usecase to coordinate Dual Model predictions and generate final clinical report.
-    
+
     Assignee Guidelines:
     1. Receive raw uploads (filename and image bytes).
     2. Coordinate predictions between both gateways (Traditional ML and CNN).
@@ -11,12 +12,12 @@ class PredictCancerUseCase:
     4. Call the LLM gateway to compile diagnostic text report summaries.
     5. Construct and return a unified DiagnosticReport entity.
     """
-    
+
     def __init__(
         self,
         traditional_gateway: TraditionalModelGateway,
         cnn_gateway: CnnModelGateway,
-        llm_gateway: LlmServiceGateway
+        llm_gateway: LlmServiceGateway,
     ):
         self.traditional_gateway = traditional_gateway
         self.cnn_gateway = cnn_gateway
@@ -44,7 +45,13 @@ class PredictCancerUseCase:
             (traditional_result.confidence_score + cnn_result.confidence_score) / 2, 3
         )
         verdict = "Malignant" if overall_confidence >= 0.5 else "Benign"
-        risk_level = "High" if overall_confidence >= 0.72 else "Medium" if overall_confidence >= 0.48 else "Low"
+        risk_level = (
+            "High"
+            if overall_confidence >= 0.72
+            else "Medium"
+            if overall_confidence >= 0.48
+            else "Low"
+        )
         narrative = self.llm_gateway.generate_report_narrative(traditional_result, cnn_result)
 
         return DiagnosticReport(

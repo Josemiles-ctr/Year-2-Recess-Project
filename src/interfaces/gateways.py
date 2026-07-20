@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List
 from src.domain.entities import XRayScan, PredictionResult, ChatMessage
 
+
 class TraditionalModelGateway(ABC):
     """Port for Traditional Machine Learning model inference (Features + Classifier)."""
-    
+
     @abstractmethod
     def extract_features(self, scan: XRayScan) -> Dict[str, float]:
         """Calculates image texture, HOG, LBP, and statistical values."""
@@ -18,7 +19,7 @@ class TraditionalModelGateway(ABC):
 
 class CnnModelGateway(ABC):
     """Port for Deep learning model inference (CNN/ResNet)."""
-    
+
     @abstractmethod
     def predict(self, scan: XRayScan) -> PredictionResult:
         """Feeds image pixels directly into CNN layer matrices and computes prediction."""
@@ -32,22 +33,17 @@ class CnnModelGateway(ABC):
 
 class LlmServiceGateway(ABC):
     """Port for LLM Diagnostic Dialogues and Report Generation."""
-    
+
     @abstractmethod
     def generate_report_narrative(
-        self, 
-        traditional_result: PredictionResult, 
-        cnn_result: PredictionResult
+        self, traditional_result: PredictionResult, cnn_result: PredictionResult
     ) -> str:
         """Injects model diagnostic metrics to compile natural language narrative."""
         pass
 
     @abstractmethod
     def chat_follow_up(
-        self, 
-        history: List[ChatMessage], 
-        new_message: str, 
-        diagnostic_context: Dict[str, Any]
+        self, history: List[ChatMessage], new_message: str, diagnostic_context: Dict[str, Any]
     ) -> str:
         """Answers follow-up patient/doctor questions with dynamic diagnostic context."""
         pass
