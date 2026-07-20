@@ -214,7 +214,7 @@ Python code is formatted and linted with Ruff. Run `ruff format src` to apply fo
 ---
 
 ## Group Members & Contact Information
-We are Group O for BSE2301 Mini Project 2. Replace the placeholders below with your group details.
+We are Group O for BSE2301 Mini Project 2
 
 | Member | Registration Number |
 | --- | --- |
