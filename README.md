@@ -220,7 +220,7 @@ We are Group O for BSE2301 Mini Project 2
 | --- | --- |
 | OTAI JOSEPH| 24/U/23001 |
 | AKATUKUNDA PRECIOUS PRAISE | 24/U/0147 |
-| Member 3 | Enter registration number |
+| ABUREK EMMANUEL | 24/U/02614/PS |
 | Member 4 | Enter registration number |
 | Member 5 | Enter registration number |
 
