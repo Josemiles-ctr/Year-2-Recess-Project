@@ -44,3 +44,11 @@ models/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Ignore dataset images
+data/raw/
+
+# Ignore large image files
+*.jpg
+*.jpeg
+*.png
