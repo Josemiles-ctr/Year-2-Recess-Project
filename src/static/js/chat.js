@@ -209,6 +209,7 @@ async function createNewSession() {
             currentSessionId = data.session_id;
             await loadSessions();
             document.getElementById('chat-messages').innerHTML = '';
+            showWelcome();
         }
     } catch {}
 }
@@ -230,10 +231,70 @@ async function switchSession(sid) {
 function renderHistory(history) {
     const container = document.getElementById('chat-messages');
     container.innerHTML = '';
-    history.forEach(msg => {
-        appendMessageBubble(msg.role, msg.content);
-    });
+    if (history.length === 0) {
+        showWelcome();
+    } else {
+        hideWelcome();
+        history.forEach(msg => {
+            appendMessageBubble(msg.role, msg.content);
+        });
+    }
     scrollToBottom();
+}
+
+async function sendQuery(query) {
+    if (!query || !currentSessionId) return;
+
+    appendMessageBubble('user', escapeHtml(query));
+
+    const input = document.getElementById('chat-input');
+    input.value = '';
+    input.disabled = true;
+    document.getElementById('send-btn').disabled = true;
+
+    const typingEl = appendTypingIndicator();
+    scrollToBottom();
+
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: query, session_id: currentSessionId }),
+        });
+
+        typingEl.remove();
+
+        try {
+            const data = await res.json();
+            if (data.status === 'success') {
+                appendMessageBubble('assistant', data.response.content);
+                await loadSessions();
+            } else {
+                showErrorMessage(data.message || 'Could not get an answer.');
+            }
+        } catch {
+            showErrorMessage('Connection lost with the server.');
+        }
+    } catch {
+        typingEl.remove();
+        showErrorMessage('Request timed out. Please try again.');
+    }
+
+    hideWelcome();
+    input.disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+    scrollToBottom();
+}
+
+function hideWelcome() {
+    const el = document.getElementById('chat-welcome');
+    if (el) el.style.display = 'none';
+}
+
+function showWelcome() {
+    const el = document.getElementById('chat-welcome');
+    if (el) el.style.display = '';
 }
 
 function initChat() {
@@ -246,54 +307,14 @@ function initChat() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const query = input.value.trim();
-        if (!query || !currentSessionId) return;
-
-        appendMessageBubble('user', escapeHtml(query));
-        input.value = '';
-        input.disabled = true;
-        document.getElementById('send-btn').disabled = true;
-
-        const typingEl = appendTypingIndicator();
-        scrollToBottom();
-
-        try {
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: query, session_id: currentSessionId }),
-            });
-
-            typingEl.remove();
-
-            try {
-                const data = await res.json();
-                if (data.status === 'success') {
-                    appendMessageBubble('assistant', data.response.content);
-                    await loadSessions();
-                } else {
-                    showErrorMessage(data.message || 'Could not get an answer.');
-                }
-            } catch {
-                showErrorMessage('Connection lost with the server.');
-            }
-        } catch {
-            typingEl.remove();
-            showErrorMessage('Request timed out. Please try again.');
-        }
-
-        input.disabled = false;
-        document.getElementById('send-btn').disabled = false;
-        input.focus();
-        scrollToBottom();
+        await sendQuery(input.value.trim());
     });
 
     if (chips) {
         chips.addEventListener('click', (e) => {
             const chip = e.target.closest('.chip');
             if (chip) {
-                input.value = chip.dataset.prompt;
-                form.dispatchEvent(new Event('submit'));
+                sendQuery(chip.dataset.prompt);
             }
         });
     }
