@@ -1,65 +1,61 @@
 # System Architecture & Clean Architecture Specification
 
-This document details the architectural layout of the **AI-Powered Cancer Predictor & LLM Diagnostic Assistant**. We employ Uncle Bob's **Clean Architecture** (also known as Onion Architecture) to decouple our core business rules from external frameworks (Flask), database engines, deep learning backends, and LLM API clients.
+This document details the architectural layout of the **Flask Framework Expert Assistant — RAG Chatbot**. We employ Uncle Bob's **Clean Architecture** (Onion Architecture) to decouple core business rules from external frameworks (Flask), vector databases, and LLM API clients.
 
 ---
 
 ## Architecture Overview
 
-The system is organized into concentric circles representing different levels of software abstraction. Dependencies point only **inwards**; the core business domain has no knowledge of Flask, web routers, or specific ML model library weights.
+The system is organized into concentric circles representing different levels of software abstraction. Dependencies point only **inwards**; the core business domain has no knowledge of Flask, ChromaDB, or the Gemini API.
 
 ```text
-    ▲  [External Frameworks & Drivers]  (Flask, PyTorch, Gemini API, HTTP Client)
+    ▲  [External Frameworks & Drivers]  (Flask, ChromaDB, Gemini API)
     │           │
-    │  [Interface Adapters]             (Controllers, Model Gateways, LLM Presenters)
+    │  [Interface Adapters]             (Controllers, LLM Gateways, Session Presenters)
     │           │
-    │  [Use Cases]                      (PredictCancer, GenerateDiagnosticReport)
+    │  [Use Cases]                      (ChatWithAssistant, ManageSessions)
     │           │
-    ▼  [Domain Entities]                (XRayScan, PredictionResult, DiagnosticConversation)
+    ▼  [Domain Entities]                (ChatMessage, Session)
 ```
 
 ### 1. Domain Layer (src/domain/)
-The innermost circle containing the enterprise business entities. These are plain Python classes containing data and basic validations. They represent the core data abstractions.
-- **XRayScan**: Holds the binary image data, metadata (patient ID, capture date, scan dimensions), and pre-extracted features.
-- **PredictionResult**: Encapsulates the output of both prediction models, including predictions (benign vs malignant), probability confidence scores, and extracted biological features (texture, nodule counts).
-- **DiagnosticConversation**: Holds the chat history between the user and the AI assistant, ensuring contextual coherence.
+The innermost circle containing the enterprise business entities — plain Python classes with data and basic validations.
+- **ChatMessage**: Holds a single chat turn (`role`: user/assistant, `content`: message text).
 
-### 2. Use Cases Layer (src/use_cases/)
-Contains application-specific business rules. Use cases coordinate the flow of data to and from entities, and direct those entities to use their critical business rules to achieve the goals of the use case.
-- **PredictCancerUseCase**: Receives an raw uploaded scan, initiates both model predictions (Traditional ML and CNN), performs comparisons, and produces a consolidated diagnostic output.
-- **GenerateDiagnosticReportUseCase**: Takes a PredictionResult and coordinates with an LLM service to synthesize a detailed medical narrative report.
-- **ChatWithAssistantUseCase**: Handles conversational follow-ups by forwarding the diagnosis context alongside user queries to the LLM interface.
+### 2. Use Cases Layer (src/interfaces/)
+Contains application-specific business rules. Use cases coordinate the flow of data to and from entities.
+- **LlmServiceGateway**: Abstract interface defining how the app interacts with an LLM service (`generate`, `generate_stream`, `generate_title`).
 
-### 3. Interface Adapters (src/interfaces/)
+### 3. Interface Adapters (src/infrastructure/)
 Translates data between the format most convenient for use cases and the format most convenient for external systems.
-- **Model Gateways**: Abstract interfaces defining how use cases trigger models (e.g., TraditionalModelGateway, CnnModelGateway).
-- **LLM Gateway**: Abstract interface defining how to interact with Large Language Models (e.g., LlmServiceGateway).
-- **Controllers**: Adapts input from the Flask routes (HTTP requests) into Use Case input data structures, and converts Use Case output back into JSON or rendered HTML templates.
+- **GeminiRagService**: Concrete implementation of `LlmServiceGateway` that queries ChromaDB for relevant Flask source code chunks and calls the Gemini API.
+- **SessionStore**: In-memory session storage for chat history, titles, and session metadata.
+- **Web Routes (Flask Blueprint)**: Adapts HTTP requests into use case invocations and converts responses back to JSON or rendered templates.
 
-### 4. Infrastructure & Frameworks Layer (src/infrastructure/)
-The outermost circle, composed of frameworks and tools such as Flask, database adapters, concrete machine learning weights, and actual HTTP clients calling LLM APIs.
-- **Flask Web Server**: Registers HTTP routes, handles file uploads, processes cookies/sessions, and renders HTML templates.
-- **PyTorch/Scikit-Learn Predictors**: Concrete classes implementing the CnnModelGateway and TraditionalModelGateway boundaries.
-- **External LLM Client**: Concrete class implementing the LlmServiceGateway that constructs API payloads, invokes external APIs, and processes responses.
+### 4. Frameworks & Drivers
+The outermost circle, composed of frameworks and tools.
+- **Flask**: Web server, Blueprint routing, Jinja templating, session cookies.
+- **ChromaDB**: Persistent vector database storing 411 AST-parsed Flask source code chunks.
+- **Gemini API**: Google's generative AI model for embeddings and text generation.
 
 ---
 
-## Data Flow (Upload & Diagnosis)
+## Data Flow (User Query → Response)
 
-1. **Request Entry**: A user uploads a chest X-ray scan through the Web UI. The request hits the Flask route `/analyze`.
-2. **Controller Adaptation**: Flask route extracts the file and passes it to the `AnalyzeController`.
-3. **Use Case Trigger**: The controller calls `PredictCancerUseCase.execute()`, passing the raw bytes.
-4. **Feature & Neural Inference**:
-   - The usecase invokes `TraditionalModelGateway.predict()`. Under the hood, this extracts HOG, LBP, and texture parameters.
-   - The usecase invokes `CnnModelGateway.predict()`. Under the hood, this passes the image tensor through the CNN layers.
-5. **Entity Creation**: The predictions are combined to construct a `PredictionResult` domain entity.
-6. **LLM Context Synthesis**: The `PredictionResult` is passed to the `GenerateDiagnosticReportUseCase`, which prepares the context prompt, calls the `LlmServiceGateway`, and appends the detailed response.
-7. **Response Formulating**: The controller receives the domain entities, transforms them into JSON/HTML format, and sends them back to the user's browser.
+1. **Request Entry**: User types a question in the chat UI. The request hits the Flask route `POST /api/chat`.
+2. **Session Lookup**: The route loads the chat history from `SessionStore` for the current session.
+3. **RAG Retrieval**: `GeminiRagService.retrieve()` embeds the query via `gemini-embedding-001` and queries ChromaDB for the top-5 most similar Flask source chunks.
+4. **Prompt Assembly**: The retrieved chunks, conversation history (last 6 turns), and system prompt are compiled into a single prompt.
+5. **LLM Generation**: The prompt is sent to `gemini-flash-latest`. The response is collected (or streamed).
+6. **Persistence**: The user message and assistant response are appended to the session history in `SessionStore`.
+7. **Title Generation**: If this is the session's first message, `GeminiRagService.generate_title()` creates a concise title.
+8. **Response**: The response JSON is returned to the browser and rendered as Markdown.
 
 ---
 
 ## Key Design Patterns Used
 
-- **Dependency Injection**: Dependencies are injected into use cases via constructors (e.g., passing concrete ML model implementations to the `PredictCancerUseCase`), which permits simple unit testing by mocking gateways.
-- **Boundary Interfaces**: Defined as Python abstract base classes (`abc.ABC`) to establish boundaries between layers, enforcing the dependency inversion principle.
-- **Repository/Gateway Pattern**: Isolates ML inference libraries from the business core. If the CNN moves backends, only the infrastructure wrapper needs to be updated.
+- **Dependency Injection**: Dependencies are injected via Flask's `app.config` (e.g., `RAG_SERVICE`, `SESSION_STORE`), making unit testing straightforward.
+- **Boundary Interfaces**: `LlmServiceGateway` (abstract base class) establishes a boundary between use cases and external LLM providers. Switching from Gemini to another provider only requires a new infrastructure adapter.
+- **Repository Pattern**: `SessionStore` abstracts session persistence behind a simple dict-like interface. Can be swapped for a database-backed store without changing use case code.
+- **Factory Pattern**: `create_app()` in `app_setup.py` wires all dependencies together, loads environment variables, and returns a configured Flask instance.

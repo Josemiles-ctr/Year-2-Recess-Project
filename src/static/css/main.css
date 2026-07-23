@@ -124,6 +124,12 @@ body {
     white-space: nowrap;
 }
 
+.header-logo {
+    height: 32px;
+    width: auto;
+    display: block;
+}
+
 .logo-highlight { color: var(--primary); }
 
 .btn-new-chat {
@@ -348,15 +354,18 @@ body {
 }
 
 .welcome-icon {
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     margin: 0 auto 0.75rem;
-    background: var(--primary-light);
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary);
+}
+
+.welcome-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .welcome-title {
@@ -444,6 +453,53 @@ body {
     background: var(--primary);
     color: var(--text-inverse);
     border-radius: 12px 12px 4px 12px;
+}
+
+.chat-message-wrap {
+    position: relative;
+}
+
+.message-actions {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.chat-message-wrap:hover .message-actions {
+    opacity: 1;
+}
+
+.chat-message-wrap.assistant .message-actions {
+    right: auto;
+    left: -2px;
+}
+
+.msg-copy-btn {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.msg-copy-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+}
+
+.msg-copy-btn.copied {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
 }
 
 .message-bubble code {

@@ -23,7 +23,7 @@
                 </button>
             </div>
             <header class="chat-header">
-                <h1 class="chat-title">Flask<span class="logo-highlight">Expert</span></h1>
+                <h1 class="chat-title"><img src="{{ url_for('static', filename='flask-name.svg') }}" alt="Flask" class="header-logo"></h1>
                 <span class="chat-subtitle">Ask me anything about Flask framework</span>
             </header>
         </div>
@@ -49,11 +49,7 @@
                 <div class="chat-container">
                     <div class="chat-welcome" id="chat-welcome">
                         <div class="welcome-icon">
-                            <svg width="32" height="32" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="2" y="2" width="24" height="24" rx="6" stroke="currentColor" stroke-width="2" fill="none"/>
-                                <path d="M9 14h10M14 9v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <circle cx="14" cy="14" r="3" fill="currentColor" opacity="0.3"/>
-                            </svg>
+                            <img src="{{ url_for('static', filename='flask-name.svg') }}" alt="Flask" class="welcome-logo">
                         </div>
                         <h2 class="welcome-title">Hello <span id="user-name-display">{{ user_name or 'Guest' }}</span>, welcome to <span class="gradient-text">Flask Expert</span></h2>
                         <p class="welcome-subtitle">Ask any question about Flask's source code, API, or internals. Answers are grounded in the actual codebase.</p>

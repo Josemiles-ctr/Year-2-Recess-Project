@@ -1,7 +1,7 @@
-# AI-Powered X-Ray Cancer Predictor & LLM Diagnostic Assistant
+# Flask Framework Expert Assistant — RAG Chatbot
 ### BSE2301: Software Engineering Mini Project 2 — Recess 2026 (Group O)
 
-An AI-powered web service built using Flask that predicts the presence of cancer in chest/body X-ray scan images. The system goes beyond binary classifications by extracting detailed radiological findings and transferring them to a Large Language Model (LLM). This establishes an intelligent system capable of responding to user/clinician queries with context-aware, detailed diagnostic reasoning.
+A Retrieval-Augmented Generation (RAG) chatbot that answers questions about the **Flask web framework's source code**. The system uses a pre-built ChromaDB vector store containing AST-parsed chunks of Flask's codebase and a Gemini API LLM to produce grounded, source-aware answers.
 
 ---
 
@@ -9,31 +9,26 @@ An AI-powered web service built using Flask that predicts the presence of cancer
 1. Project Overview
 2. Key Objectives
 3. System Architecture
-4. Machine Learning Approaches
-5. LLM Integration & Interactive System
-6. Repository & Project Structure
-7. Academic Requirements Checklist
-8. Setup & Installation Instructions
-9. Running the Application
-10. Group Members & Contact Information
+4. RAG Pipeline
+5. Repository & Project Structure
+6. Setup & Installation Instructions
+7. Running the Application
+8. Group Members & Contact Information
 
 ---
 
 ## Project Overview
-Traditional medical image classification services return a simple "Yes/No" or probability score. This project builds a comprehensive, double-engineered diagnostic pipeline comparing traditional Feature Extraction (paired with Machine Learning classifiers) and Deep Learning (CNN) approaches. 
 
-Furthermore, to mimic real-world clinical assistant applications, the diagnostic outcome, feature weights, confidence metrics, and image characteristics are serialized and injected into an LLM context. This allows patients or clinicians to ask follow-up questions about the prediction and obtain rich, contextual, and understandable responses instead of a bare label.
+Instead of a generic LLM answer about Flask, this chatbot retrieves relevant source-code chunks from Flask's actual codebase and injects them as context for the model. Every answer is grounded in real function signatures, class definitions, and module docstrings from the Flask repository. The application is built using Flask itself, demonstrating the framework's capabilities (Blueprints, sessions, SSE streaming, Jinja templates, etc.).
 
 ---
 
 ## Key Objectives
-- **Data Exploration & Cleaning**: Identify missing features, apply robust imputations/handling strategies, and document the dataset before and after preprocessing.
-- **Dual-Model ML Pipeline**:
-  - **Approach A (Feature-based ML)**: Apply image processing to extract texture, shape, and intensity features (e.g., Haralick textures, HOG, LBP), then train classifiers (Random Forest, SVM, or XGBoost).
-  - **Approach B (Deep Learning CNN)**: Train an end-to-end Convolutional Neural Network (such as ResNet or custom CNN) directly on the raw X-ray scans.
-- **Model Evaluation**: Compare performance under real-world computational and data constraints using cross-validation.
-- **LLM Integration**: Feed structured diagnostic reports into an LLM to facilitate subsequent questions and natural language explanations.
-- **Interactive Flask Web App**: Develop a clean, responsive, and modern user interface to upload scans, view prediction confidence, compare model metrics, and chat with the AI diagnostic assistant.
+- **RAG Pipeline**: Embed user queries, retrieve top-K similar Flask source code chunks from ChromaDB, and feed them as context to the LLM.
+- **Multi-Session Chat**: Allow users to create, switch between, and delete independent chat sessions with per-session history.
+- **Streaming & Title Generation**: Stream LLM responses token-by-token via SSE and auto-generate concise session titles from the first user message.
+- **Light/Dark Theme**: Professional light and dark themes with a toggle button and system preference detection.
+- **Responsive Design**: Collapsible sidebar for desktop, slide-over drawer for mobile.
 
 ---
 
@@ -41,116 +36,62 @@ Furthermore, to mimic real-world clinical assistant applications, the diagnostic
 
 ```mermaid
 graph TD
-    A[User X-Ray Upload] --> B[Flask Web Server]
-    B --> C[Approach 1: Feature Extraction]
-    B --> D[Approach 2: End-to-End CNN]
-    
-    C --> C1[Image Processing: HOG, LBP, Textures]
-    C1 --> C2[Traditional Classifier: SVM/RF/XGBoost]
-    
-    D --> D1[Deep Learning Inference: CNN/ResNet]
-    
-    C2 --> E[Diagnostic Report & Prediction Metrics]
-    D1 --> E
-    
-    E --> F[Prompt Builder: Context Injection]
-    F --> G[LLM Assistant: Claude / Gemini / OpenAI]
-    G --> H[Interactive Chat UI: Conversational QA]
-    
+    A[User Query] --> B[Flask Web Server]
+    B --> C[Session Store]
+    B --> D[GeminiRagService]
+    D --> E[ChromaDB Vector Store]
+    D --> F[Gemini API]
+    E --> G[Flask Source Code AST Chunks]
+    F --> H[LLM Response]
+    H --> I[Chat UI with Markdown Rendering]
+
     style A fill:#4F46E5,stroke:#fff,stroke-width:2px,color:#fff
     style B fill:#06B6D4,stroke:#fff,stroke-width:2px,color:#fff
-    style E fill:#10B981,stroke:#fff,stroke-width:2px,color:#fff
-    style G fill:#F59E0B,stroke:#fff,stroke-width:2px,color:#fff
+    style D fill:#10B981,stroke:#fff,stroke-width:2px,color:#fff
+    style E fill:#F59E0B,stroke:#fff,stroke-width:2px,color:#fff
     style H fill:#EC4899,stroke:#fff,stroke-width:2px,color:#fff
 ```
 
 ---
 
-## Machine Learning Approaches
+## RAG Pipeline
 
-### Approach 1: Image Processing + Traditional ML
-This approach focuses on hand-crafted features which are computationally efficient and interpretable:
-1. **Preprocessing**: Grayscale conversion, histogram equalization (CLAHE), and bilateral filtering for noise reduction.
-2. **Feature Extraction**:
-   - **Local Binary Patterns (LBP)**: Captures fine micro-textures and lesion patterns.
-   - **Histogram of Oriented Gradients (HOG)**: Evaluates edge orientations and shapes of abnormalities.
-   - **Gray-Level Co-occurrence Matrix (GLCM)**: Measures contrast, correlation, energy, and homogeneity.
-3. **Classification**: Trained on classifiers such as Support Vector Machines (SVM), Random Forest, and Gradient Boosting (XGBoost).
-
-### Approach 2: Deep Learning (End-to-End CNN)
-This approach leverages deep neural networks to automatically discover spatial hierarchies and complex feature mappings from raw pixels:
-1. **Model**: Custom CNN architecture or Transfer Learning using standard backbones like ResNet-50 or MobileNetV2.
-2. **Training**: Optimization using Adam, categorical cross-entropy loss, data augmentation (rotations, zooms, flips), and dropout regularization to prevent overfitting.
-3. **Output**: Heatmap activations (Grad-CAM) to identify regions of high cancer probability, and a final classification probability score.
-
----
-
-## LLM Integration & Interactive System
-Once a prediction is generated, the application compiles an analysis context envelope:
-```json
-{
-  "prediction": "Malignant / Suspicious",
-  "confidence_score": 0.892,
-  "detected_nodules": 2,
-  "texture_homogeneity_score": 0.12,
-  "cnn_activation_density": "high",
-  "recommended_follow_up": "Biopsy and CT correlation"
-}
-```
-This payload is injected dynamically into the system prompt of the conversational agent. When a user asks: "What does my result mean?" or "What features led to this decision?", the LLM retrieves this structured context and explains the machine learning metrics in natural language, enabling a reassuring and clear conversation.
+1. **Query Embedding**: User question is embedded via `gemini-embedding-001`.
+2. **Vector Search**: The embedding queries the ChromaDB collection (`flask_code`, 411 chunks) for the top-5 most similar source snippets.
+3. **Context Assembly**: Retrieved snippets are formatted with file paths and symbol names into a prompt context block.
+4. **LLM Generation**: The context, conversation history (last 6 turns), and system prompt are sent to `gemini-flash-latest` (Gemini 3.6 Flash).
+5. **Response Delivery**: The full response is returned (or streamed) and rendered as Markdown in the chat UI.
 
 ---
 
 ## Repository & Project Structure
-The repository is divided into two primary directories reflecting the academic grading rubrics:
 
 ```text
-├── data/                       # Dataset placeholder (raw images and clinical metadata)
-├── notebooks/                  # Part A: Data Science & Machine Learning notebooks
-│   ├── exploratory_analysis.ipynb # Tasks 1-9: Preprocessing, Imputation, & Visualizations
-│   └── model_training.ipynb       # Tasks 10-12: Training, Cross-Validation, & Comparison
-├── src/                        # Part B: Flask Web Service codebase
-│   ├── app.py                  # Main Flask App entrypoint
-│   ├── config.py               # Configuration & API Key management
-│   ├── models/                 # Pre-trained models (weights and pipelines)
-│   │   ├── classifier.pkl      # Approach 1: Traditional ML pipeline
-│   │   └── cnn_model.h5        # Approach 2: Deep Learning CNN weights
-│   ├── utils/                  # Helper modules
-│   │   ├── feature_extractor.py# Image processing features code
-│   │   └── llm_helper.py       # LLM api calling and context injection
-│   ├── static/                 # Frontend assets (CSS, JS, Images)
+├── chroma_db/                   # Pre-built vector store (Flask source AST chunks)
+├── src/                         # Flask web service codebase
+│   ├── app.py                   # Flask app factory entrypoint
+│   ├── config.py                # Configuration & env loading
+│   ├── domain/
+│   │   └── entities.py          # Domain entities (ChatMessage)
+│   ├── interfaces/
+│   │   └── gateways.py          # LlmServiceGateway interface
+│   ├── infrastructure/
+│   │   ├── llm/
+│   │   │   └── gemini_service.py  # GeminiRagService (RAG + LLM)
+│   │   ├── session_store.py     # In-memory session storage
+│   │   └── web/
+│   │       ├── app_setup.py     # Factory bootstrap
+│   │       └── routes.py        # Session CRUD, chat, streaming endpoints
+│   ├── static/
 │   │   ├── css/
-│   │   │   └── main.css        # Premium custom styles (Glassmorphism & animations)
+│   │   │   └── main.css         # Professional light/dark theme styles
 │   │   └── js/
-│   │       └── chat.js         # Interactive Chat & upload behavior
-│   └── templates/              # HTML layout files
-│       ├── index.html          # Upload and dashboard home
-│       └── report.html         # Interactive LLM Diagnostic report
-├── requirements.txt            # System dependencies
-└── README.md                   # Project documentation (this file)
+│   │       └── chat.js          # Multi-session chat, Markdown render, copy buttons
+│   └── templates/
+│       └── index.html           # Single-page chat interface
+├── requirements.txt             # System dependencies
+└── README.md                    # Project documentation (this file)
 ```
-
----
-
-## Academic Requirements Checklist
-
-### PART A: Data Science & Machine Learning (10-Page Report & Code)
-- [ ] **Introduction**: Clear description of the dataset and project objectives.
-- [ ] **Task 1 & 2**: Identify missing values, calculate percentages, and justify handling methods (imputation vs. deletion).
-- [ ] **Task 3**: Implement cleaning/imputation, evaluating its effect on dataset size and distribution.
-- [ ] **Task 4 & 5**: Identify features and execute feature engineering (e.g., LBP/HOG extraction).
-- [ ] **Task 6**: Evaluate feature engineering's impact on classifier performance.
-- [ ] **Task 7 & 8**: Create visualizations using Matplotlib, Seaborn, and Plotly (heatmaps, scatter plots, 3D charts).
-- [ ] **Task 9**: Interpret plots to extract patterns and diagnostic features.
-- [ ] **Task 10 & 11**: Split data, train modules, perform cross-validation, and log evaluation metrics (F1-score, ROC-AUC).
-- [ ] **Task 12**: Summarize conclusions, actionable insights, and recommendations.
-
-### PART B: Web Development with Flask (10-Page Report & Web App)
-- [ ] **Introduction & Architecture**: Detailed breakdown of the Flask web service.
-- [ ] **Interactive Upload & Run**: Page to upload X-ray images, preprocess, and execute dual model inference.
-- [ ] **Visual Dashboard**: Displays predictions, confidence levels, and comparison charts between Approach 1 and Approach 2.
-- [ ] **LLM Chatbot**: A chat window with context injected, enabling subsequent patient/doctor questions.
-- [ ] **Report & Screenshots**: Annotated system documentation with functional screenshots.
 
 ---
 
@@ -183,9 +124,10 @@ The repository is divided into two primary directories reflecting the academic g
 4. **Set Up Environment Variables**:
    Create a .env file in the root directory:
    ```env
-   FLASK_ENV=development
+   GEMINI_API_KEY=your_gemini_api_key_here
+   FLASK_APP=src/app.py
+   FLASK_DEBUG=True
    SECRET_KEY=your_secret_flask_key_here
-   LLM_API_KEY=your_gemini_or_openai_api_key_here
    ```
 
 ---
@@ -193,11 +135,10 @@ The repository is divided into two primary directories reflecting the academic g
 ## Running the Application
 
 ### Start the Flask Server
-Run the web application locally:
 ```bash
-python src/app.py
+flask run
 ```
-Open your browser and navigate to http://127.0.0.1:5000/.
+Open your browser and navigate to `http://127.0.0.1:5000/`.
 
 ---
 

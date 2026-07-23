@@ -4,47 +4,41 @@ This document provides a detailed structural guide and template for compiling th
 
 ---
 
-## Part A: Data Science & Machine Learning Report Layout
+## Part A: RAG System Design & Evaluation Report Layout
 *Limit: 10 Pages Maximum. Recommended formatting: Calibri/Arial 11pt, 1.15 line spacing.*
 
 ### Page 1: Title Page & Executive Summary
-- **Title**: *Comparative Automated Lung Cancer Diagnostic System: Feature-Engineered ML vs. Deep Convolutional Networks.*
+- **Title**: *Retrieval-Augmented Generation for Source Code Q&A: A Flask Framework Expert Assistant.*
 - **Header**: Course BSE2301 Software Engineering Mini Project 2. Group O.
-- **Abstract**: Concise overview of the problem (delay in radiograph reviews), our dual approach, and key validation metrics.
+- **Abstract**: Concise overview of the problem (understanding large codebases), our RAG approach, embedding strategy, and evaluation.
 
-### Page 2: Section 1 — Introduction & Dataset Exploration (Tasks 1-3)
-- **Dataset Description**: Define the scan volume, target variables (cancer status), and pixel dimensions.
-- **Task 1: Missing Data Analysis**: Table showing each column, count of missing values, and missing percentage.
-- **Task 2 & 3: Imputation & Preprocessing Justification**: Explain why specific imputation (e.g. median substitution or column removal) was used. Include:
-  - Bilateral noise filtering justification.
-  - Standard CLAHE contrast equalization justification.
-  - *Include screenshots of X-Ray scans "Before cleaning vs. After bilateral filtering & CLAHE".*
+### Pages 2-3: Section 1 — Source Acquisition & Chunking Strategy
+- **Flask Repository**: Describe cloning `pallets/flask` and selecting `src/flask/` as the corpus.
+- **AST Parsing**: Explain how Python's `ast` module was used to split source into module/class/function/method chunks.
+- **Chunk Statistics**: Table showing total chunks (411), breakdown by type (module, class, function, method), and average chunk size.
+- **Rationale**: Why AST chunking preserves semantic boundaries better than naive sliding-window splitting.
 
-### Pages 3-4: Section 2 — Feature Engineering (Tasks 4-6)
-- **Task 4: Feature Identification**: Describe textures (GLCM), shapes (HOG), and micro-structures (LBP) as potential predictor vectors.
-- **Task 5: Extraction Implementation**: Summarize OpenCV and Scikit-Image code functions used.
-- **Task 6: Feature Impact Assessment**: Show a graph/table of model performance (e.g., SVM accuracy) *with* hand-crafted features vs. *without* them. Prove that feature engineering boosts traditional model sensitivity.
+### Pages 4-5: Section 2 — Embedding & Vector Store
+- **Embedding Model**: Describe `gemini-embedding-001` (768 dimensions, task-specific RETRIEVAL_DOCUMENT/RETRIEVAL_QUERY).
+- **Vector Database**: ChromaDB persistent collection, cosine similarity, batch embedding process with rate-limit handling.
+- **Retrieval Strategy**: Top-K selection (K=5), distance metrics, and relevance filtering.
 
-### Pages 5-6: Section 3 — Exploratory Visualization & Insights (Tasks 7-9)
-- **Task 7 & 8: Data Visualizations**: Include 2 to 3 annotated plots:
-  - **Plot 1**: Correlation Heatmap of GLCM texture parameters (contrast, correlation, homogeneity).
-  - **Plot 2**: 2D/3D Scatter Plot separating Benign vs. Malignant clusters based on Feature 1 (Contrast) and Feature 2 (Edge Density).
-- **Task 9: Visual Deductions**: Bullet points explaining what the graphs prove (e.g., *"Malignant tissue shows a clear linear cluster towards high contrast and high edge density values, validating our threshold boundary"*).
+### Pages 6-7: Section 3 — LLM Integration & Prompt Design
+- **Generation Model**: `gemini-flash-latest` (Gemini 3.6 Flash), API integration via `google-genai` SDK.
+- **System Prompt**: Explain the grounding constraints, citation rules, and refusal behaviour.
+- **Context Assembly**: Show the prompt template with conversation history, retrieved context, and user question.
+- **Streaming**: SSE implementation for token-by-token response delivery.
 
-### Pages 7-8: Section 4 — Model Training & Evaluation (Tasks 10-11)
-- **Task 10: Model Selection & Splitting**: Explain Stratified 80/20 splitting. Describe SVM/Random Forest parameters vs. PyTorch CNN layers.
-- **Task 11: Cross Validation & Comparative Performance**:
-  - Insert a comparative table containing metrics:
-    | Model Approach | Accuracy | Precision | Recall (Sensitivity) | F1-Score | ROC-AUC |
-    | :--- | :---: | :---: | :---: | :---: | :---: |
-    | **Approach 1 (Features + SVM)** | 84.5% | 85.0% | 82.3% | 83.6% | 0.89 |
-    | **Approach 2 (End-to-End CNN)** | 89.2% | 87.5% | 91.0% | 89.2% | 0.94 |
-  - *Include ROC Curve charts and Confusion Matrices for both models.*
+### Pages 8-9: Section 4 — Web Application & Session Management
+- **Flask Architecture**: Clean Architecture layers (domain → interfaces → infrastructure).
+- **Session Store**: In-memory dictionary-based storage with CRUD operations.
+- **Frontend**: Responsive chat UI, Markdown rendering, copy buttons, light/dark theme, suggestion chips.
+- **API Endpoints**: Table of all REST endpoints with request/response formats.
 
-### Page 9-10: Section 5 — Conclusions, Insights & Recommendations (Task 12)
-- **Conclusions**: CNN provides superior recall (sensitivity), while Traditional ML excels in execution speed and clear model explainability.
-- **Actionable Insights**: Incorporating dual-models builds a safety net: when classifiers disagree, cases are flagged for manual clinical triage.
-- **Recommendations**: Clinical validation, cloud scale migrations, and using local LLM narratives as diagnostic assistants.
+### Page 10: Section 5 — Conclusions & Recommendations
+- **Effectiveness**: Evaluate RAG quality with sample Q&A pairs showing grounded vs. hallucinated responses.
+- **Limitations**: In-memory sessions, daily API quota limits, single-model dependency.
+- **Recommendations**: Database-backed sessions, multi-model fallback, expanded corpus.
 
 ---
 
@@ -52,29 +46,31 @@ This document provides a detailed structural guide and template for compiling th
 *Limit: 10 Pages Maximum.*
 
 ### Page 1: Title Page & Web Service Abstract
-- **Title**: *Clinical Web Interface & AI Diagnostic Integration using Flask clean architecture.*
+- **Title**: *RAG-Powered Code Assistant Web Interface using Flask Clean Architecture.*
 - **Details**: Github links, supervision logs, and team responsibilities.
 
 ### Pages 2-3: Section 1 — Design Architecture
-- **Intro**: Describe the flask web application, the interactive file upload drag-and-drop client, and chatbot panel.
-- **Architecture Model**: Copy the Clean Architecture UML/block diagram from docs/architecture.md. Explain:
+- **Intro**: Describe the chat interface, session management, and RAG pipeline.
+- **Architecture Model**: Clean Architecture UML/block diagram from docs/architecture.md. Explain:
   - Domain isolation.
   - Use-case flow control.
   - Dependency inversion (gateways).
 
 ### Pages 4-6: Section 2 — Web Application Systems Documentation
-- **Core Modules**: Document code paths and roles:
-  - app.py (Main Application loop)
+- **Core Modules**:
+  - app.py (Application factory)
   - routes.py (Controller router mapping)
+  - gemini_service.py (RAG + LLM integration)
+  - session_store.py (Session persistence)
   - entities.py (Business concepts)
-- **LLM Integration Flow**: Document how session data acts as prompt context to structure chatbot replies.
+- **RAG Integration Flow**: Document how ChromaDB queries and Gemini API calls are orchestrated.
 
 ### Pages 7-9: Section 3 — System Execution Screenshots
-*Include high-quality screenshots with labels explaining UI behaviors:*
-- **Screenshot 1**: Landing Page with Dropzone (Empty and Active states).
-- **Screenshot 2**: Upload progress bar active during analysis.
-- **Screenshot 3**: Report page rendering consensus diagnosis, comparative bars, features table, and Grad-CAM color overlays.
-- **Screenshot 4**: Conversation window showing doctor querying the diagnostic assistant.
+*Include high-quality screenshots with labels explaining UI behaviours:*
+- **Screenshot 1**: Landing page with welcome message and suggestion chips.
+- **Screenshot 2**: Active chat session showing user and assistant messages with Markdown rendering.
+- **Screenshot 3**: Session list sidebar with multiple conversations.
+- **Screenshot 4**: Light/dark theme toggle in action.
 
 ### Page 10: Section 4 — Git Versioning & Supervision Summary
 - **Git log representation**: Summary showing active participation of all team members.

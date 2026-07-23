@@ -1,125 +1,179 @@
 # Web API Specification & Documentation
 
-This document describes the endpoints, input parameters, session payloads, and response JSON formats for the Flask web service.
+This document describes the endpoints, input parameters, session payloads, and response JSON formats for the Flask Framework Expert Assistant.
 
 ---
 
 ## Web Interface Routes
 
-### 1. Main Dashboard
+### 1. Main Chat Interface
 - **Route**: `GET /`
-- **Description**: Returns the main dashboard interface. Contains the file upload dropzone, model comparison displays, and placeholder templates for results.
-- **Response**: HTML template (index.html).
-
-### 2. Diagnosis Report View
-- **Route**: `GET /report`
-- **Description**: Serves a detailed, print-friendly, and interactive summary page containing specific diagnostic logs, metrics tables, and the context-aware chat interface.
-- **Response**: HTML template (report.html).
+- **Description**: Returns the single-page chat interface. Includes the sidebar (session list, user info, theme toggle) and the main chat area (welcome message, message stream, input form).
+- **Query Parameters**: None.
+- **Response**: HTML template (index.html) with optional `user_name` from Flask session.
 
 ---
 
 ## API Endpoints
 
-### 1. Analyze X-Ray Scan
-Processes the uploaded image, triggers the dual-model classification engines, and responds with prediction scores and image attributes.
+### 1. Set User Name
+Stores the user's display name in the Flask session cookie.
 
-- **Route**: `POST /api/analyze`
-- **Content-Type**: `multipart/form-data`
-- **Request Parameters**:
-  | Key | Type | Required | Description |
-  | :--- | :--- | :--- | :--- |
-  | `file` | Binary | Yes | The chest/body X-ray image (supported formats: PNG, JPG, JPEG). |
+- **Route**: `POST /api/set-name`
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  { "name": "Alice" }
+  ```
+- **Response (200 OK)**:
+  ```json
+  { "status": "success", "name": "Alice" }
+  ```
 
-- **Example Response (200 OK)**:
+---
+
+### 2. List Sessions
+Returns all sessions for the current user, sorted by creation date (newest first).
+
+- **Route**: `GET /api/sessions`
+- **Response (200 OK)**:
   ```json
   {
     "status": "success",
-    "filename": "patient_xray_99182.png",
-    "timestamp": "2026-07-20T12:50:00Z",
-    "traditional_model": {
-      "prediction": "Malignant",
-      "confidence": 0.824,
-      "features": {
-        "contrast": 18.23,
-        "homogeneity": 0.35,
-        "energy": 0.08,
-        "correlation": 0.74,
-        "hog_mean": 0.19,
-        "lbp_mean": 4.12
+    "sessions": [
+      {
+        "id": "uuid-string",
+        "title": "How Flask routing works",
+        "created_at": "2026-07-23T12:00:00Z",
+        "message_count": 3
       }
-    },
-    "cnn_model": {
-      "prediction": "Malignant",
-      "confidence": 0.895,
-      "grad_cam_url": "/static/temp/gradcam_99182.png"
-    },
-    "consensus": {
-      "verdict": "Malignant",
-      "risk_level": "High",
-      "confidence": 0.895
-    }
-  }
-  ```
-
-- **Error Response (400 Bad Request)**:
-  ```json
-  {
-    "status": "error",
-    "message": "No file uploaded or file format not supported."
+    ]
   }
   ```
 
 ---
 
-## Chat with AI Assistant
-Leverages the predictive outputs stored in the Flask session to answer context-aware follow-up questions from the user or clinician.
+### 3. Create Session
+Creates a new empty chat session.
 
-- **Route**: `POST /api/chat`
-- **Content-Type**: `application/json`
-- **Request Headers**:
-  - `Content-Type: application/json`
-- **Request Payload**:
+- **Route**: `POST /api/sessions`
+- **Response (200 OK)**:
   ```json
-  {
-    "message": "Why did the traditional classifier flag this image as malignant?"
-  }
+  { "status": "success", "session_id": "uuid-string" }
   ```
 
-- **Session Context Enclosed (Handled internally)**:
-  ```json
-  {
-    "context": {
-      "traditional_model_prediction": "Malignant",
-      "traditional_confidence": 0.824,
-      "cnn_model_prediction": "Malignant",
-      "cnn_confidence": 0.895,
-      "homogeneity": 0.35,
-      "contrast": 18.23
-    }
-  }
-  ```
+---
 
-- **Example Response (200 OK)**:
+### 4. Get Session
+Returns full session data including chat history.
+
+- **Route**: `GET /api/sessions/<session_id>`
+- **Response (200 OK)**:
   ```json
   {
     "status": "success",
-    "response": "The traditional classifier labeled this scan as malignant primarily due to high image contrast (18.23) and low homogeneity (0.35) inside the tissue matrix. This combination often points to highly irregular pixel regions, which are common in cancerous mass densities. The CNN model supports this classification with a higher confidence of 89.5%."
+    "session": {
+      "id": "uuid-string",
+      "title": "How Flask routing works",
+      "created_at": "2026-07-23T12:00:00Z",
+      "history": [
+        { "role": "user", "content": "How does Flask handle URL routing?" },
+        { "role": "assistant", "content": "Flask uses the `add_url_rule` method..." }
+      ]
+    }
   }
   ```
+- **Error Response (404)**:
+  ```json
+  { "status": "error", "message": "Session not found" }
+  ```
 
-- **Error Response (500 Internal Server Error)**:
+---
+
+### 5. Delete Session
+Deletes a chat session and its history.
+
+- **Route**: `DELETE /api/sessions/<session_id>`
+- **Response (200 OK)**:
+  ```json
+  { "status": "success" }
+  ```
+
+---
+
+### 6. Update Session Title
+Manually updates the session title.
+
+- **Route**: `PUT /api/sessions/<session_id>/title`
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  { "title": "New custom title" }
+  ```
+- **Response (200 OK)**:
+  ```json
+  { "status": "success" }
+  ```
+
+---
+
+### 7. Send Chat Message (Non-Streaming)
+Sends a user message and receives the full assistant response.
+
+- **Route**: `POST /api/chat`
+- **Content-Type**: `application/json`
+- **Request Body**:
   ```json
   {
-    "status": "error",
-    "message": "LLM service unavailable. Check API keys."
+    "message": "How does Flask handle URL routing?",
+    "session_id": "uuid-string"
   }
+  ```
+- **Response (200 OK)**:
+  ```json
+  {
+    "status": "success",
+    "response": {
+      "content": "Flask registers routes via the `add_url_rule` method...\n\nIn `src/flask/app.py`, `Flask.add_url_rule`..."
+    }
+  }
+  ```
+- **Error Response (500)**:
+  ```json
+  { "status": "error", "message": "The AI service is temporarily out of requests due to a quota limit. Please wait about 35 seconds before trying again." }
+  ```
+
+---
+
+### 8. Send Chat Message (Streaming via SSE)
+Streams the assistant response token-by-token using Server-Sent Events.
+
+- **Route**: `POST /api/chat/stream`
+- **Content-Type**: `application/json`
+- **Request Body**:
+  ```json
+  {
+    "message": "How does Flask handle URL routing?",
+    "session_id": "uuid-string"
+  }
+  ```
+- **Response**: `text/event-stream`
+  ```
+  data: Flask
+  data:  registers
+  data:  routes
+  data:  via
+  data: [DONE]
   ```
 
 ---
 
 ## Session Management
-To facilitate multi-turn chat without requiring a database, the system stores diagnosis records in Flask Client-side Sessions (cryptographically signed cookie).
-- **Session Keys**:
-  - `active_prediction`: Stores the stringified JSON details of the latest `/api/analyze` call.
-  - `chat_history`: Array of chat dicts: `[{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]`.
-- **Session Clearing**: Session details are automatically cleared when a new image upload is successfully processed, starting a new patient assessment context.
+
+Sessions are stored server-side in an in-memory `SessionStore`, keyed by user name:
+- **Create**: `POST /api/sessions` generates a UUID and initialises an empty history.
+- **Read**: `GET /api/sessions/<id>` returns the session with full message history.
+- **Update**: Messages are appended via `POST /api/chat` and titles via `PUT /api/sessions/<id>/title`.
+- **Delete**: `DELETE /api/sessions/<id>` removes the session.
+
+**Note**: Stored in memory only — sessions are lost on server restart. The user name is persisted in a Flask signed session cookie.
