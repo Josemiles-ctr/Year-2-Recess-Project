@@ -1,46 +1,90 @@
 # Environment and secrets
+
 .env
 .env.*
 !.env.example
 
+
+
 # Python bytecode and caches
+
 __pycache__/
 *.py[cod]
 *$py.class
+
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
 .coverage
 coverage.xml
 htmlcov/
 
+
+
 # Virtual environments
+
 .venv/
 venv/
 env/
 ENV/
 
+
+
 # Build and packaging artifacts
+
 build/
 dist/
 *.egg-info/
 .eggs/
 *.egg
 
+
 # Jupyter notebooks
+
 .ipynb_checkpoints/
 
+
+
 # Generated data and model artifacts
+
 data/processed/
 data/models/
+
 models/
+
 *.joblib
 *.pkl
 *.pt
 *.pth
 
-# Local tooling and operating-system files
+# Raw dataset files
+
+# Ignore NIH Chest X-ray images
+data/raw/images-224/
+data/raw/train/
+data/raw/test/
+data/raw/val/
+
+# Ignore image files
+data/raw/*.png
+data/raw/*.jpg
+data/raw/*.jpeg
+
+# Ignore pretrained models
+data/raw/*.h5
+
+
+# Ignore large raw dataset files
+data/raw/BBox_List_2017_Official_NIH.csv
+data/raw/Data_Entry_2017.csv
+data/raw/train_val_list_NIH.txt
+data/raw/test_list_NIH.txt
+
+# Local tooling and OS files
+
 .vscode/
 .idea/
+
 .DS_Store
 Thumbs.db
