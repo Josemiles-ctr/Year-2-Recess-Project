@@ -7,3 +7,9 @@ Jinja2==3.1.6
 MarkupSafe==3.0.3
 python-dotenv==1.2.2
 Werkzeug==3.1.8
+numpy
+pillow
+opencv-python-headless
+scikit-image
+scikit-learn
+
