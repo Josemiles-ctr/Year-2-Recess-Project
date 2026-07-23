@@ -30,9 +30,18 @@ dist/
 # Jupyter notebooks
 .ipynb_checkpoints/
 
-# Generated data and model artifacts
+# Dataset and model artifacts
+
+# Ignore large dataset images
+data/raw/*.png
+data/raw/*.jpg
+data/raw/*.jpeg
+
+# Ignore processed/generated data
 data/processed/
 data/models/
+
+# Ignore trained models
 models/
 *.joblib
 *.pkl
