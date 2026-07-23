@@ -55,6 +55,11 @@ data/raw/train/
 data/raw/test/
 data/raw/val/
 data/raw/images-224/
+# Raw NIH metadata files
+data/raw/Data_Entry_2017.csv
+data/raw/BBox_List_2017_Official_NIH.csv
+data/raw/train_val_list_NIH.txt
+data/raw/test_list_NIH.txt
 
 # Raw image files
 data/raw/**/*.png
