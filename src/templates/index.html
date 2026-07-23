@@ -3,75 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered X-Ray Diagnostic Hub | Group O</title>
-    <!-- Google Fonts -->
+    <title>Flask Framework Expert Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
-    <!-- Custom CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
-    <header class="app-header">
-        <div class="header-container">
-            <div class="logo">
-                <i data-lucide="microscope" class="clinic-icon"></i>
-                <span>AURA<span class="logo-highlight">Scan</span></span>
+    <div class="app-layout">
+        <div class="app-header">
+            <div class="app-header-left">
+                <button class="btn btn-icon btn-toggle-sidebar" id="toggle-sidebar" aria-label="Toggle sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <span class="app-brand">Flask<span class="logo-highlight">Expert</span></span>
+                <button class="btn btn-new-chat" id="new-chat-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New chat
+                </button>
             </div>
-            <nav class="nav-links">
-                <a href="#workflow" class="nav-link">How it works</a>
-                <a href="https://github.com" target="_blank" class="nav-link"><i data-lucide="github"></i> GitHub</a>
-            </nav>
+            <header class="chat-header">
+                <h1 class="chat-title">Flask<span class="logo-highlight">Expert</span></h1>
+                <span class="chat-subtitle">Ask me anything about Flask framework</span>
+            </header>
         </div>
-    </header>
 
-    <main class="main-content">
-        <section class="hero-section">
-            <p class="eyebrow">Clinical decision-support workspace</p>
-            <h1 class="hero-title">Clearer review for <br><span class="gradient-text">chest X-ray diagnostics</span></h1>
-            <p class="hero-subtitle">
-                AuraScan brings traditional feature analysis and neural-network outputs into one structured review, with a clear report and follow-up assistant.
-            </p>
-            <a href="{{ url_for('web.upload_page') }}" class="btn btn-primary hero-cta">Get started <i data-lucide="arrow-right"></i></a>
-        </section>
+        <div class="app-body">
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-sessions" id="session-list"></div>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="user-avatar" id="sidebar-avatar">G</div>
+                        <span class="user-name" id="sidebar-name">{{ user_name or 'Guest' }}</span>
+                    </div>
+                    <button class="btn-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                        <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    </button>
+                </div>
+            </aside>
 
-        <section class="workflow-section" id="workflow">
-            <h2 class="section-title text-center">A focused review workflow</h2>
-            <div class="grid-container triple-col">
-                <article class="glass-card workflow-card">
-                    <span class="step-number">01</span>
-                    <i data-lucide="upload" class="workflow-icon"></i>
-                    <h3>Upload a scan</h3>
-                    <p>Attach a supported chest X-ray image and add an optional review note.</p>
-                </article>
-                <article class="glass-card workflow-card">
-                    <span class="step-number">02</span>
-                    <i data-lucide="scan-search" class="workflow-icon"></i>
-                    <h3>Review analysis</h3>
-                    <p>Compare model confidence, extracted features, and attention-map output.</p>
-                </article>
-                <article class="glass-card workflow-card">
-                    <span class="step-number">03</span>
-                    <i data-lucide="message-square" class="workflow-icon"></i>
-                    <h3>Understand the report</h3>
-                    <p>Read the structured summary and ask follow-up questions in context.</p>
-                </article>
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+            <main class="main-area">
+                <div class="chat-container">
+                    <div class="chat-welcome" id="chat-welcome">
+                        <div class="welcome-icon">
+                            <svg width="32" height="32" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="2" width="24" height="24" rx="6" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M9 14h10M14 9v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                <circle cx="14" cy="14" r="3" fill="currentColor" opacity="0.3"/>
+                            </svg>
+                        </div>
+                        <h2 class="welcome-title">Hello <span id="user-name-display">{{ user_name or 'Guest' }}</span>, welcome to <span class="gradient-text">Flask Expert</span></h2>
+                        <p class="welcome-subtitle">Ask any question about Flask's source code, API, or internals. Answers are grounded in the actual codebase.</p>
+                        <div class="suggestion-chips" id="suggestion-chips">
+                            <button class="chip" data-prompt="How does Flask handle URL routing?">How does Flask handle URL routing?</button>
+                            <button class="chip" data-prompt="Explain the Flask application lifecycle">Flask app lifecycle</button>
+                            <button class="chip" data-prompt="How do Flask blueprints work?">How do blueprints work?</button>
+                            <button class="chip" data-prompt="What is the Flask request context?">Flask request context</button>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chat-messages"></div>
+
+                    <div class="chat-input-area">
+                        <form class="chat-input-form" id="chat-form">
+                            <input type="text" id="chat-input" placeholder="Ask me anything about Flask framework..." required autofocus>
+                            <button type="submit" class="btn btn-primary btn-icon" id="send-btn" aria-label="Send message">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </form>
+                        <p class="input-footer">Flask Expert can make mistakes. Verify important information from the source code.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="name-modal-overlay" id="name-modal" style="display: {{ 'none' if user_name else 'flex' }}">
+        <div class="name-modal">
+            <div class="name-modal-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-        </section>
-    </main>
-
-    <footer class="app-footer">
-        <div class="footer-container">
-            <p>&copy; 2026 Recess Project Group O. BSE2301 Software Engineering Mini Project 2.</p>
-            <p>Academic supervisor contact: <a href="mailto:jeff.geoff.mis@gmail.com">jeff.geoff.mis@gmail.com</a></p>
+            <h2>Welcome to Flask Expert</h2>
+            <p>What should I call you?</p>
+            <form id="name-form" class="name-form">
+                <input type="text" id="name-input" placeholder="Your name" maxlength="30" autocomplete="name" autofocus>
+                <button type="submit" class="btn btn-primary name-submit">Get started</button>
+            </form>
         </div>
-    </footer>
+    </div>
 
-    <div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
-
-    <!-- JS Scripts -->
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>
 </html>

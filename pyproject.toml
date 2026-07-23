@@ -5,6 +5,8 @@ requires-python = ">=3.10"
 dependencies = [
     "flask>=3.1",
     "python-dotenv>=1.0",
+    "google-genai>=1.0.0",
+    "chromadb>=0.5.0",
 ]
 
 [tool.ruff]

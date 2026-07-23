@@ -13,5 +13,5 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("FLASK_DEBUG", "True").lower() == "true"
 
-    print(f" * Launching Group O Cancer Scan Predictor Service (Port: {port})...")
+    print(f" * Launching Flask Framework Expert Assistant (Port: {port})...")
     app.run(host="0.0.0.0", port=port, debug=debug)

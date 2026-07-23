@@ -1,134 +1,155 @@
+import uuid
 from flask import (
     Blueprint,
     request,
     jsonify,
     render_template,
     session,
-    redirect,
-    url_for,
     current_app,
+    Response,
 )
 
 web_bp = Blueprint("web", __name__)
 
 
+def _get_store():
+    return current_app.config["SESSION_STORE"]
+
+
 @web_bp.route("/")
 def index():
-    """Task Assignee Implementation steps:
-    1. Render and return the home landing page template (index.html).
-    """
-    # Placeholder: Renders the home screen
-    return render_template("index.html")
+    name = session.get("user_name", "")
+    return render_template("index.html", user_name=name)
 
 
-@web_bp.route("/upload")
-def upload_page():
-    """Render the dedicated scan-upload workspace."""
-    return render_template("upload.html")
+@web_bp.route("/api/set-name", methods=["POST"])
+def set_name():
+    data = request.get_json() or {}
+    name = data.get("name", "").strip()
+    session["user_name"] = name or "Guest"
+    return jsonify({"status": "success", "name": session["user_name"]})
 
 
-@web_bp.route("/report")
-def report_page():
-    """Task Assignee Implementation steps:
-    1. Check if 'active_prediction' details exist inside the cookie session.
-    2. If missing, redirect the browser to the upload landing page.
-    3. If present, render the diagnostics dashboard template (report.html), passing session details.
-    """
-    report_data = session.get("active_prediction")
-    if not report_data:
-        return redirect(url_for("web.upload_page"))
-
-    return render_template("report.html", data=report_data)
+@web_bp.route("/api/sessions", methods=["GET"])
+def list_sessions():
+    user = session.get("user_name", "Guest")
+    store = _get_store()
+    return jsonify({
+        "status": "success",
+        "sessions": store.list_sessions(user),
+    })
 
 
-@web_bp.route("/api/analyze", methods=["POST"])
-def analyze_scan():
-    """Task Assignee Implementation steps:
-    1. Check if 'file' exists in the request.files dictionary. If not, return a 400 Bad Request error.
-    2. Parse the uploaded file stream and extract filename and raw file bytes.
-    3. Fetch the 'ANALYZE_CONTROLLER' instance from the current_app.config environment.
-    4. Call controller.handle_upload(filename, file_bytes).
-    5. If prediction returns success:
-       - Save the resulting dictionary to session['active_prediction'].
-       - Reset the conversational log by clearing session['chat_history'].
-    6. Return the dictionary back to the client as a JSON payload.
-    """
-    if "file" not in request.files:
-        return jsonify({"status": "error", "message": "No file uploaded."}), 400
+@web_bp.route("/api/sessions", methods=["POST"])
+def create_session():
+    user = session.get("user_name", "Guest")
+    store = _get_store()
+    sid = str(uuid.uuid4())
+    store.create_session(user, sid)
+    return jsonify({"status": "success", "session_id": sid})
 
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"status": "error", "message": "No file selected."}), 400
 
-    # Placeholder: Invoke the injected controller to process the upload
-    try:
-        controller = current_app.config["ANALYZE_CONTROLLER"]
-        response_data = controller.handle_upload(file.filename, file.read())
+@web_bp.route("/api/sessions/<sid>", methods=["GET"])
+def get_session(sid):
+    user = session.get("user_name", "Guest")
+    store = _get_store()
+    data = store.get_session(user, sid)
+    if data is None:
+        return jsonify({"status": "error", "message": "Session not found"}), 404
+    return jsonify({"status": "success", "session": data})
 
-        if response_data["status"] == "success":
-            session["active_prediction"] = response_data
-            session["chat_history"] = []
 
-        return jsonify(response_data)
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Routing/Controller error: {str(e)}"}), 500
+@web_bp.route("/api/sessions/<sid>", methods=["DELETE"])
+def delete_session(sid):
+    user = session.get("user_name", "Guest")
+    store = _get_store()
+    store.delete_session(user, sid)
+    return jsonify({"status": "success"})
+
+
+@web_bp.route("/api/sessions/<sid>/title", methods=["PUT"])
+def update_session_title(sid):
+    user = session.get("user_name", "Guest")
+    data = request.get_json() or {}
+    title = data.get("title", "").strip()
+    store = _get_store()
+    store.update_title(user, sid, title or "New chat")
+    return jsonify({"status": "success"})
 
 
 @web_bp.route("/api/chat", methods=["POST"])
 def chat_assistant():
-    """Task Assignee Implementation steps:
-    1. Parse user queries from request.get_json().
-    2. Extract 'active_prediction' from session. If missing, return an error.
-    3. Retrieve the current chat log list from session['chat_history'].
-    4. Construct a diagnostic context dict containing verdict details.
-    5. Fetch 'CHAT_CONTROLLER' from current_app.config.
-    6. Call controller.handle_message(chat_history, new_message, diagnostic_context).
-    7. If chat execution succeeds:
-       - Append user message and chatbot response to chat_history list.
-       - Save the updated history list back to session['chat_history'].
-    8. Return response payload as JSON.
-    """
     data = request.get_json() or {}
     message = data.get("message")
+    sid = data.get("session_id")
     if not message:
         return jsonify({"status": "error", "message": "Empty query."}), 400
+    if not sid:
+        return jsonify({"status": "error", "message": "session_id required."}), 400
 
-    report_data = session.get("active_prediction")
-    if not report_data:
-        return jsonify({"status": "error", "message": "No active scan context."}), 400
+    user = session.get("user_name", "Guest")
+    store = _get_store()
 
-    # Placeholder: Invoke the injected controller to execute follow-up dialogues
     try:
-        controller = current_app.config["CHAT_CONTROLLER"]
-        chat_history = session.get("chat_history", [])
+        rag = current_app.config["RAG_SERVICE"]
+        history = store.get_history(user, sid)
 
-        diagnostic_context = {
-            "verdict": report_data["consensus"]["verdict"],
-            "risk_level": report_data["consensus"]["risk_level"],
-            "traditional_prediction": report_data["traditional_model"]["prediction"],
-            "traditional_confidence": report_data["traditional_model"]["confidence"],
-            "cnn_prediction": report_data["cnn_model"]["prediction"],
-            "cnn_confidence": report_data["cnn_model"]["confidence"],
-        }
+        from src.domain.entities import ChatMessage
 
-        result = controller.handle_message(chat_history, message, diagnostic_context)
+        history_objs = [
+            ChatMessage(role=item["role"], content=item["content"])
+            for item in history
+            if item.get("role") in {"user", "assistant"} and item.get("content")
+        ]
 
-        if result["status"] == "success":
-            chat_history.append({"role": "user", "content": message})
-            chat_history.append({"role": "assistant", "content": result["response"]["content"]})
-            session["chat_history"] = chat_history
+        is_new = len(history) == 0
+        result = rag.generate(message, history_objs)
 
-        return jsonify(result)
+        store.append_message(user, sid, {"role": "user", "content": message})
+        store.append_message(user, sid, {"role": "assistant", "content": result})
+        if is_new:
+            title = rag.generate_title(message)
+            store.update_title(user, sid, title)
+
+        return jsonify({"status": "success", "response": {"content": result}})
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Routing/Controller error: {str(e)}"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@web_bp.route("/api/chat/clear", methods=["POST"])
-def clear_chat():
-    """Task Assignee Implementation steps:
-    1. Clear or overwrite session['chat_history'] to empty list.
-    2. Return success response status.
-    """
-    # Placeholder: Empty the chat array
-    session["chat_history"] = []
-    return jsonify({"status": "success", "message": "Chat cleared."})
+@web_bp.route("/api/chat/stream", methods=["POST"])
+def chat_stream():
+    data = request.get_json() or {}
+    message = data.get("message")
+    sid = data.get("session_id")
+    if not message:
+        return jsonify({"status": "error", "message": "Empty query."}), 400
+    if not sid:
+        return jsonify({"status": "error", "message": "session_id required."}), 400
+
+    user = session.get("user_name", "Guest")
+    store = _get_store()
+    rag = current_app.config["RAG_SERVICE"]
+    history = store.get_history(user, sid)
+
+    from src.domain.entities import ChatMessage
+
+    history_objs = [
+        ChatMessage(role=item["role"], content=item["content"])
+        for item in history
+        if item.get("role") in {"user", "assistant"} and item.get("content")
+    ]
+
+    def generate():
+        full_text = ""
+        for chunk in rag.generate_stream(message, history_objs):
+            full_text += chunk
+            yield f"data: {chunk}\n\n"
+
+        store.append_message(user, sid, {"role": "user", "content": message})
+        store.append_message(user, sid, {"role": "assistant", "content": full_text})
+        if len(history) == 0:
+            title = rag.generate_title(message)
+            store.update_title(user, sid, title)
+        yield "data: [DONE]\n\n"
+
+    return Response(generate(), mimetype="text/event-stream")

@@ -1,283 +1,454 @@
-/* ==========================================================================
-   AuraScan Dynamic Interactivity Script (Group O Recess Project)
-   ========================================================================== */
+let currentSessionId = null;
+let sessions = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    renderIcons();
-    initUploadPanel();
-    initChatbot();
+document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
+    initSidebar();
+    initChat();
+    await initNameModal();
 });
 
-function renderIcons() {
-    window.lucide?.createIcons({ attrs: { 'stroke-width': 1.8 } });
+function initTheme() {
+    const html = document.documentElement;
+    const sun = document.getElementById('theme-icon-sun');
+    const moon = document.getElementById('theme-icon-moon');
+    const btn = document.getElementById('theme-toggle');
+
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') {
+        html.setAttribute('data-theme', stored);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        html.setAttribute('data-theme', 'dark');
+    } else {
+        html.setAttribute('data-theme', 'light');
+    }
+    updateThemeIcons();
+
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateThemeIcons();
+        });
+    }
+
+    function updateThemeIcons() {
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        if (sun) sun.style.display = isDark ? 'none' : 'block';
+        if (moon) moon.style.display = isDark ? 'block' : 'none';
+    }
 }
 
-/**
- * Displays a short, accessible in-app notification without using browser alerts.
- */
-function showSnackbar(message, type = 'info') {
-    const region = document.getElementById('snackbar-region');
-    if (!region) return;
+async function initNameModal() {
+    const modal = document.getElementById('name-modal');
+    const form = document.getElementById('name-form');
+    const input = document.getElementById('name-input');
 
-    const snackbar = document.createElement('div');
-    snackbar.className = `snackbar snackbar-${type}`;
-    snackbar.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    if (!modal || modal.style.display === 'none') {
+        await initApp();
+        return;
+    }
 
-    const icon = document.createElement('i');
-    icon.setAttribute('data-lucide', type === 'error'
-        ? 'circle-alert'
-        : type === 'success'
-            ? 'circle-check'
-            : 'info');
-    icon.setAttribute('aria-hidden', 'true');
-
-    const text = document.createElement('span');
-    text.textContent = message;
-
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'snackbar-close';
-    close.setAttribute('aria-label', 'Dismiss notification');
-    close.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>';
-
-    const dismiss = () => {
-        snackbar.classList.remove('is-visible');
-        snackbar.addEventListener('transitionend', () => snackbar.remove(), { once: true });
-    };
-
-    close.addEventListener('click', dismiss);
-    snackbar.append(icon, text, close);
-    region.appendChild(snackbar);
-    renderIcons();
-    requestAnimationFrame(() => snackbar.classList.add('is-visible'));
-    window.setTimeout(dismiss, 5000);
-}
-
-/**
- * Handles all drag-and-drop and manual file uploads on the landing page
- */
-function initUploadPanel() {
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('file-input');
-    const browseBtn = document.getElementById('browse-btn');
-    const progressContainer = document.getElementById('progress-container');
-    const uploadPrompt = document.querySelector('.upload-prompt');
-    const filenameDisplay = document.getElementById('filename-display');
-    const percentDisplay = document.getElementById('percent-display');
-    const progressFill = document.getElementById('progress-fill');
-    const statusDisplay = document.getElementById('status-display');
-    const uploadComposer = document.getElementById('upload-composer');
-    const uploadNote = document.getElementById('upload-note');
-
-    if (!dropzone) return; // Exit if not on landing upload page
-
-    uploadComposer?.addEventListener('click', (e) => e.stopPropagation());
-
-    // Trigger input click when browse is clicked
-    browseBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.click();
-    });
-
-    dropzone.addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    // Drag-over styling
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
+    return new Promise((resolve) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            e.stopPropagation();
-            dropzone.classList.add('dragover');
-        }, false);
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.classList.remove('dragover');
-        }, false);
-    });
-
-    // Handle dropped files
-    dropzone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
-    });
-
-    // Handle manual select file
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            handleFileUpload(fileInput.files[0]);
-        }
-    });
-
-    function handleFileUpload(file) {
-        // Validation: Verify it is an image
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!allowedTypes.includes(file.type)) {
-            showSnackbar('Unsupported file format. Please upload a PNG or JPG X-Ray image.', 'error');
-            return;
-        }
-
-        // Show progress panel
-        uploadPrompt.style.display = 'none';
-        progressContainer.hidden = false;
-        progressContainer.style.display = 'block';
-        filenameDisplay.textContent = file.name;
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('note', uploadNote?.value.trim() || '');
-
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/analyze', true);
-
-        // Track upload progress
-        xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                // Limit visual load percentage to 90% until backend processes predictions
-                const visualPercent = Math.round(percent * 0.9);
-                percentDisplay.textContent = `${visualPercent}%`;
-                progressFill.style.width = `${visualPercent}%`;
+            const name = input.value.trim() || 'Guest';
+            try {
+                const res = await fetch('/api/set-name', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name }),
+                });
+                const data = await res.json();
+                updateNameUI(data.status === 'success' ? data.name : name);
+            } catch {
+                updateNameUI(name);
             }
+            modal.style.display = 'none';
+            await initApp();
+            resolve();
         });
 
-        // Backend response
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.status === 'success') {
-                        percentDisplay.textContent = '100%';
-                        progressFill.style.width = '100%';
-                        statusDisplay.innerHTML = '<i data-lucide="check" class="text-low"></i> Analysis complete. Rendering diagnostic dashboard...';
-                        renderIcons();
-                        
-                        // Small delay for visual completion, then redirect to report
-                        setTimeout(() => {
-                            window.location.href = '/report';
-                        }, 800);
-                    } else {
-                        resetUpload('Analysis failed: ' + response.message);
-                    }
-                } else {
-                    resetUpload('Server error occurred during processing. Status code: ' + xhr.status);
-                }
-            }
-        };
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') form.dispatchEvent(new Event('submit'));
+        });
 
-        statusDisplay.innerHTML = '<i data-lucide="loader-circle" class="icon-spin"></i> Uploading scan vectors...';
-        renderIcons();
-        xhr.send(formData);
+        setTimeout(() => input.focus(), 300);
+    });
+}
+
+function updateNameUI(name) {
+    const els = document.querySelectorAll('#user-name-display, #sidebar-name');
+    els.forEach(el => el.textContent = name);
+    const avatar = document.getElementById('sidebar-avatar');
+    if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
+}
+
+async function initApp() {
+    await loadSessions();
+    if (sessions.length > 0) {
+        await switchSession(sessions[0].id);
+    } else {
+        await createNewSession();
     }
+    initSidebarToggle();
+}
 
-    function resetUpload(errorMessage) {
-        showSnackbar(errorMessage, 'error');
-        uploadPrompt.style.display = 'block';
-        progressContainer.hidden = true;
-        progressContainer.style.display = 'none';
-        progressFill.style.width = '0%';
-        percentDisplay.textContent = '0%';
-        fileInput.value = '';
+function initSidebar() {
+    const avatar = document.getElementById('sidebar-avatar');
+    const name = document.getElementById('sidebar-name');
+    if (avatar && name) {
+        const n = name.textContent || 'Guest';
+        avatar.textContent = n.charAt(0).toUpperCase();
     }
 }
 
-/**
- * Handles Q&A chat interactions on the report page
- */
-function initChatbot() {
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const chatMessages = document.getElementById('chat-messages');
+function initSidebarToggle() {
+    const toggle = document.getElementById('toggle-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const sidebar = document.getElementById('sidebar');
+    const layout = document.querySelector('.app-layout');
 
-    if (!chatForm) return; // Exit if not on report screen
-
-    // Always scroll to bottom of chat on load
-    scrollChatToBottom();
-
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const userQuery = chatInput.value.trim();
-        if (!userQuery) return;
-        // Render User Bubble immediately
-        appendMessageBubble('user', userQuery);
-        chatInput.value = '';
-        
-        // Render typing animation bubble
-        const typingBubble = appendTypingIndicator();
-        scrollChatToBottom();
-
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: userQuery })
-            });
-
-            // Remove typing bubble
-            typingBubble.remove();
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.status === 'success') {
-                    appendMessageBubble('assistant', result.response.content);
-                } else {
-                    showSnackbar(result.message || 'The assistant could not answer that request.', 'error');
-                }
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
             } else {
-                showSnackbar('Connection lost with the application service.', 'error');
+                sidebar.classList.toggle('collapsed');
+                layout.classList.toggle('sidebar-collapsed');
             }
-        } catch (error) {
-            typingBubble.remove();
-            showSnackbar('The request timed out. Please try again.', 'error');
-        }
+        });
+    }
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        });
+    }
+}
 
-        scrollChatToBottom();
+function closeSidebarMobile() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+    }
+}
+
+async function loadSessions() {
+    try {
+        const res = await fetch('/api/sessions');
+        const data = await res.json();
+        sessions = data.sessions || [];
+        renderSessionList();
+    } catch {}
+}
+
+function renderSessionList() {
+    const list = document.getElementById('session-list');
+    if (!list) return;
+
+    if (sessions.length === 0) {
+        list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-muted);font-size:0.82rem;">No conversations yet</div>';
+        return;
+    }
+
+    list.innerHTML = sessions.map(s => {
+        const active = s.id === currentSessionId ? 'active' : '';
+        const title = s.title || 'New chat';
+        return `
+            <div class="session-item ${active}" data-id="${s.id}">
+                <svg class="session-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="session-title">${escapeHtml(title)}</span>
+                <button class="session-delete" data-id="${s.id}" title="Delete">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    list.querySelectorAll('.session-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.session-delete')) return;
+            switchSession(item.dataset.id);
+        });
     });
 
-    function appendMessageBubble(role, content) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-message ${role}`;
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
-        
-        // Format simple Markdown breaks to HTML breaks inside bubbles
-        bubble.innerHTML = content
-            .replace(/\n/g, '<br>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>');
-            
-        msgDiv.appendChild(bubble);
-        chatMessages.appendChild(msgDiv);
+    list.querySelectorAll('.session-delete').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            try {
+                await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+                if (currentSessionId === id) {
+                    sessions = sessions.filter(s => s.id !== id);
+                    if (sessions.length > 0) {
+                        await switchSession(sessions[0].id);
+                    } else {
+                        await createNewSession();
+                    }
+                } else {
+                    sessions = sessions.filter(s => s.id !== id);
+                    renderSessionList();
+                }
+            } catch {}
+        });
+    });
+}
+
+async function createNewSession() {
+    try {
+        const res = await fetch('/api/sessions', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+            currentSessionId = data.session_id;
+            await loadSessions();
+            document.getElementById('chat-messages').innerHTML = '';
+        }
+    } catch {}
+}
+
+async function switchSession(sid) {
+    if (sid === currentSessionId) return;
+    currentSessionId = sid;
+    renderSessionList();
+    try {
+        const res = await fetch(`/api/sessions/${sid}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+            renderHistory(data.session.history || []);
+        }
+    } catch {}
+    closeSidebarMobile();
+}
+
+function renderHistory(history) {
+    const container = document.getElementById('chat-messages');
+    container.innerHTML = '';
+    history.forEach(msg => {
+        appendMessageBubble(msg.role, msg.content);
+    });
+    scrollToBottom();
+}
+
+function initChat() {
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const chips = document.getElementById('suggestion-chips');
+    const newChatBtn = document.getElementById('new-chat-btn');
+
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = input.value.trim();
+        if (!query || !currentSessionId) return;
+
+        appendMessageBubble('user', escapeHtml(query));
+        input.value = '';
+        input.disabled = true;
+        document.getElementById('send-btn').disabled = true;
+
+        const typingEl = appendTypingIndicator();
+        scrollToBottom();
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: query, session_id: currentSessionId }),
+            });
+
+            typingEl.remove();
+
+            try {
+                const data = await res.json();
+                if (data.status === 'success') {
+                    appendMessageBubble('assistant', data.response.content);
+                    await loadSessions();
+                } else {
+                    showErrorMessage(data.message || 'Could not get an answer.');
+                }
+            } catch {
+                showErrorMessage('Connection lost with the server.');
+            }
+        } catch {
+            typingEl.remove();
+            showErrorMessage('Request timed out. Please try again.');
+        }
+
+        input.disabled = false;
+        document.getElementById('send-btn').disabled = false;
+        input.focus();
+        scrollToBottom();
+    });
+
+    if (chips) {
+        chips.addEventListener('click', (e) => {
+            const chip = e.target.closest('.chip');
+            if (chip) {
+                input.value = chip.dataset.prompt;
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
     }
 
-    function appendTypingIndicator() {
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'chat-message assistant';
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
-        
-        const dots = document.createElement('div');
-        dots.className = 'typing-dots';
-        dots.innerHTML = '<span></span><span></span><span></span>';
-        
-        bubble.appendChild(dots);
-        typingDiv.appendChild(bubble);
-        chatMessages.appendChild(typingDiv);
-        return typingDiv;
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', createNewSession);
+    }
+}
+
+function appendMessageBubble(role, content) {
+    const container = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = `chat-message-wrap ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+
+    if (role === 'assistant') {
+        bubble.innerHTML = renderMarkdown(content);
+        bubble.querySelectorAll('pre code').forEach(addCopyButton);
+    } else {
+        bubble.textContent = content;
     }
 
-    function scrollChatToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    wrap.appendChild(bubble);
+    container.appendChild(wrap);
+}
+
+function appendTypingIndicator() {
+    const container = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-message-wrap assistant';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+
+    const dots = document.createElement('div');
+    dots.className = 'typing-indicator';
+    dots.innerHTML = '<span></span><span></span><span></span>';
+
+    bubble.appendChild(dots);
+    wrap.appendChild(bubble);
+    container.appendChild(wrap);
+    return wrap;
+}
+
+function showErrorMessage(msg) {
+    const container = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-message-wrap assistant';
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.style.color = '#f85149';
+    bubble.textContent = msg;
+    wrap.appendChild(bubble);
+    container.appendChild(wrap);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const container = document.getElementById('chat-messages');
+    requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+function closeSidebarMobile() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+}
+
+function renderMarkdown(text) {
+    const esc = (s) => {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    };
+
+    text = text
+        .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+            const cls = lang ? ` class="language-${esc(lang)}"` : '';
+            return `<pre><code${cls}>${esc(code.trim())}</code></pre>`;
+        })
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+        .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+        .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+    text = text.replace(/(<li>[\s\S]*?)(<\/li>)/g, '$1$2');
+    text = text.replace(/((?:<li>.*?<\/li>\s*)+)/g, (match) => {
+        const items = match.match(/<li>.*?<\/li>/g) || [];
+        const isOrdered = /^\d+\./.test(match);
+        const tag = isOrdered ? 'ol' : 'ul';
+        return `<${tag}>${items.join('')}</${tag}>`;
+    });
+
+    text = text.replace(/\n{2,}/g, '</p><p>');
+    text = text.replace(/\n/g, '<br>');
+    text = text.replace(/<br><\/(ul|ol)>/g, '</$1>');
+    text = text.replace(/<\/(ul|ol)><br>/g, '</$1>');
+
+    return `<p>${text}</p>`;
+}
+
+function addCopyButton(codeBlock) {
+    const pre = codeBlock.parentElement;
+    if (pre.querySelector('.copy-btn')) return;
+
+    const header = document.createElement('div');
+    header.className = 'code-header';
+
+    const lang = codeBlock.className.replace('language-', '') || 'code';
+    const label = document.createElement('span');
+    label.className = 'code-lang';
+    label.textContent = lang;
+
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+
+    btn.addEventListener('click', async () => {
+        const text = codeBlock.textContent;
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+
+    header.appendChild(label);
+    header.appendChild(btn);
+    pre.insertBefore(header, codeBlock);
+}
+
+function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
 }
