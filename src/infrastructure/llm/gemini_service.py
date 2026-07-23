@@ -168,8 +168,10 @@ Answer:"""
     @staticmethod
     def _friendly_error(err: genai_errors.ClientError) -> str:
         msg = str(err)
-        code_match = re.search(r"code:\s*(\d+)", msg)
-        code = int(code_match.group(1)) if code_match else 0
+        code = getattr(err, "code", 0) or 0
+        if not code:
+            code_match = re.search(r"^(\d+)", msg)
+            code = int(code_match.group(1)) if code_match else 0
         if code == 429:
             retry_match = re.search(r"retry\s+in\s+([\d.]+)s", msg, re.I)
             wait = retry_match.group(1) if retry_match else None
