@@ -58,31 +58,33 @@ models/
 *.pt
 *.pth
 
-# Raw dataset files
 
-# Ignore NIH Chest X-ray images
-data/raw/images-224/
+# NIH raw dataset folders
 data/raw/train/
 data/raw/test/
 data/raw/val/
-
-# Ignore image files
-data/raw/*.png
-data/raw/*.jpg
-data/raw/*.jpeg
-
-# Ignore pretrained models
-data/raw/*.h5
-
-
-# Ignore large raw dataset files
-data/raw/BBox_List_2017_Official_NIH.csv
+data/raw/images-224/
+# Raw NIH metadata files
 data/raw/Data_Entry_2017.csv
+data/raw/BBox_List_2017_Official_NIH.csv
 data/raw/train_val_list_NIH.txt
 data/raw/test_list_NIH.txt
 
-# Local tooling and OS files
+# Raw image files
+data/raw/**/*.png
+data/raw/**/*.jpg
+data/raw/**/*.jpeg
 
+# Large pretrained models
+data/raw/*.h5
+
+
+# Keep dataset metadata files
+!data/raw/metadata.csv
+!data/raw/dataset_info.md
+
+
+# IDE and OS files
 .vscode/
 .idea/
 
