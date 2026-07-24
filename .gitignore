@@ -1,46 +1,97 @@
 # Environment and secrets
+
 .env
 .env.*
 !.env.example
 
+
+
 # Python bytecode and caches
+
 __pycache__/
 *.py[cod]
 *$py.class
+
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
 .coverage
 coverage.xml
 htmlcov/
 
+
+
 # Virtual environments
+
 .venv/
 venv/
 env/
 ENV/
 
+
+
 # Build and packaging artifacts
+
 build/
 dist/
 *.egg-info/
 .eggs/
 *.egg
 
+
 # Jupyter notebooks
+
 .ipynb_checkpoints/
 
-# Generated data and model artifacts
+# Dataset and model artifacts
+
+# Ignore large dataset images
+data/raw/*.png
+data/raw/*.jpg
+data/raw/*.jpeg
+
+# Ignore processed/generated data
 data/processed/
 data/models/
+
+# Ignore trained models
 models/
+
 *.joblib
 *.pkl
 *.pt
 *.pth
 
-# Local tooling and operating-system files
+
+# NIH raw dataset folders
+data/raw/train/
+data/raw/test/
+data/raw/val/
+data/raw/images-224/
+# Raw NIH metadata files
+data/raw/Data_Entry_2017.csv
+data/raw/BBox_List_2017_Official_NIH.csv
+data/raw/train_val_list_NIH.txt
+data/raw/test_list_NIH.txt
+
+# Raw image files
+data/raw/**/*.png
+data/raw/**/*.jpg
+data/raw/**/*.jpeg
+
+# Large pretrained models
+data/raw/*.h5
+
+
+# Keep dataset metadata files
+!data/raw/metadata.csv
+!data/raw/dataset_info.md
+
+
+# IDE and OS files
 .vscode/
 .idea/
+
 .DS_Store
 Thumbs.db

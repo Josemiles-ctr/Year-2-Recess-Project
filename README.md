@@ -221,7 +221,7 @@ We are Group O for BSE2301 Mini Project 2
 | OTAI JOSEPH| 24/U/23001 |
 | AKATUKUNDA PRECIOUS PRAISE | 24/U/0147 |
 | ABUREK EMMANUEL | 24/U/02614/PS |
-| Member 4 | Enter registration number |
+|  AGABA DORECK | 24/U/23685/PS |
 | Member 5 | Enter registration number |
 
 For inquiries, support, or class supervisions, please contact:
