@@ -13,17 +13,12 @@ except ImportError:  # pragma: no cover
 
 
 class GeminiLlmService(LlmServiceGateway):
-
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
 
         self.provider = os.getenv("LLM_PROVIDER", "auto").strip().lower()
-        self.api_key = (
-            os.getenv("LLM_API_KEY")
-            or os.getenv("GEMINI_API_KEY")
-            or ""
-        )
+        self.api_key = os.getenv("LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
         self.model = os.getenv("LLM_MODEL", "").strip()
         self.client = None
 
@@ -36,13 +31,15 @@ class GeminiLlmService(LlmServiceGateway):
 
         if self.provider in ("gemini", "google", "google gemini"):
             if generativeai is None:
-                self.logger.warning("Google Gemini SDK not installed; cannot initialize Gemini client.")
+                self.logger.warning(
+                    "Google Gemini SDK not installed; cannot initialize Gemini client."
+                )
                 return
             generativeai.configure(api_key=self.api_key)
             self.client = "gemini"
             self.model = self.model or "gemini-1.0"
             return
-        
+
         if generativeai is not None:
             generativeai.configure(api_key=self.api_key)
             self.client = "gemini"
@@ -121,7 +118,6 @@ class GeminiLlmService(LlmServiceGateway):
         return f"{system_instruction}\n\n{task_description}\n\nDiagnostic Context:\n{payload}"
 
     def _call_llm(self, prompt: str) -> Tuple[str, Dict[str, Any]]:
-    
         if self.client == "gemini":
             if generativeai is None:
                 raise RuntimeError("Google Gemini SDK is unavailable.")
@@ -137,7 +133,9 @@ class GeminiLlmService(LlmServiceGateway):
                 content = str(response)
             usage = {}
             if hasattr(response, "metadata") and isinstance(response.metadata, dict):
-                usage = response.metadata.get("tokenUsage", {}) or response.metadata.get("usage", {})
+                usage = response.metadata.get("tokenUsage", {}) or response.metadata.get(
+                    "usage", {}
+                )
             return content, usage
 
         raise RuntimeError("No supported LLM client is configured for GeminiLlmService.")
@@ -212,7 +210,7 @@ class GeminiLlmService(LlmServiceGateway):
             text, usage = self._call_llm(prompt)
             self._log_token_usage(usage)
             return text.strip()
-        except Exception as exc:  # pragma: no cover
+        except Exception:  # pragma: no cover
             self.logger.exception("LLM chat follow-up failed")
             return (
                 "I am unable to generate a chat response at this time. "
