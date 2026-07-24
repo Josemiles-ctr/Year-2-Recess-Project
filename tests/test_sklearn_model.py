@@ -57,7 +57,8 @@ class TestSklearnTraditionalModel(unittest.TestCase):
             self.assertFalse(np.isnan(features[key]))
 
         result = model_gateway.predict(scan)
-        self.assertIn(result.prediction_label, ["Benign", "Malignant"])
+        # Assert prediction label is within configured CLASS_LABELS
+        self.assertIn(result.prediction_label, list(CLASS_LABELS.values()))
         self.assertGreaterEqual(result.confidence_score, 0.0)
         self.assertLessEqual(result.confidence_score, 1.0)
 
@@ -111,7 +112,8 @@ class TestSklearnTraditionalModel(unittest.TestCase):
         gateway = SklearnTraditionalModel(model=clf)
         scan = XRayScan(filename="test.png", image_bytes=self.valid_image_bytes)
         result = gateway.predict(scan)
-        self.assertIn(result.prediction_label, ["Benign", "Malignant"])
+        # Verify injected model prediction label matches configured CLASS_LABELS
+        self.assertIn(result.prediction_label, list(CLASS_LABELS.values()))
         self.assertGreaterEqual(result.confidence_score, 0.0)
 
 
