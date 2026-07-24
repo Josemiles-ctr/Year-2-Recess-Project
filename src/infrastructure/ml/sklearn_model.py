@@ -88,10 +88,12 @@ class SklearnTraditionalModel(TraditionalModelGateway):
 
         # Synthetic feature vectors corresponding to our 8 feature dimensions (FEATURE_KEYS)
         # Targets: 0 = Benign, 1 = Malignant
-        X_dummy = np.array([
-            [10.0, 0.8, 0.9, 0.5, 3.5, 2.0, 0.05, 0.1],  # Benign pattern sample
-            [80.0, 0.3, 0.2, 0.1, 8.0, 6.0, 0.25, 0.4],  # Malignant pattern sample
-        ])
+        X_dummy = np.array(
+            [
+                [10.0, 0.8, 0.9, 0.5, 3.5, 2.0, 0.05, 0.1],  # Benign pattern sample
+                [80.0, 0.3, 0.2, 0.1, 8.0, 6.0, 0.25, 0.4],  # Malignant pattern sample
+            ]
+        )
         y_dummy = np.array([0, 1])
         model.fit(X_dummy, y_dummy)
         return model
@@ -273,4 +275,3 @@ class SklearnTraditionalModel(TraditionalModelGateway):
             extracted_features=features_dict,
             model_type="Traditional Machine Learning",
         )
-
