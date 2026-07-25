@@ -9,8 +9,6 @@ import os
 import io
 import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 import numpy as np
 import torch
@@ -118,7 +116,7 @@ class TestPyTorchCnnModelInitialization(unittest.TestCase):
     def test_temp_directory_creation(self):
         """Test that temp directory is created if it doesn't exist."""
         new_temp_dir = os.path.join(self.temp_dir, "nested", "temp")
-        model = PyTorchCnnModel(temp_dir=new_temp_dir)
+        _ = PyTorchCnnModel(temp_dir=new_temp_dir)
         
         self.assertTrue(os.path.exists(new_temp_dir))
     
