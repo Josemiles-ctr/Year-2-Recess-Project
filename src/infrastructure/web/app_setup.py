@@ -6,10 +6,10 @@ from flask import Flask
 
 from src.infrastructure.web.routes import web_bp
 from src.infrastructure.simulation import (
-    SimulatedCnnModel,
     SimulatedLlmService,
     SimulatedTraditionalModel,
 )
+from src.infrastructure.ml.pytorch_model import PyTorchCnnModel
 from src.interfaces.controllers import AnalyzeController, ChatController
 from src.use_cases.chat import ChatWithAssistantUseCase
 from src.use_cases.predict import PredictCancerUseCase
@@ -38,7 +38,7 @@ def create_app() -> Flask:
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "development-only-secret-key")
     app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
     traditional_model = SimulatedTraditionalModel()
-    cnn_model = SimulatedCnnModel()
+    cnn_model = PyTorchCnnModel()
     llm_service = SimulatedLlmService()
     app.config["ANALYZE_CONTROLLER"] = AnalyzeController(
         PredictCancerUseCase(traditional_model, cnn_model, llm_service)
