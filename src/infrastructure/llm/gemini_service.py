@@ -60,6 +60,7 @@ class GeminiLlmService(LlmServiceGateway):
 
     def _build_prompt(self, context: Dict[str, Any]) -> str:
         import json
+
         system = (
             "You are a clinical-grade radiology AI assistant writing a cancer screening report for a chest X-ray. "
             "Use a structured, professional tone appropriate for an interdisciplinary clinical audience. "
@@ -68,13 +69,13 @@ class GeminiLlmService(LlmServiceGateway):
             "Return the response as valid HTML using h3/h4 headings and paragraphs. "
             "Do not hallucinate findings not present in the diagnostic context."
         )
-        return f"{system}\n\nDiagnostic Context:\n{json.dumps(context, indent=2, ensure_ascii=False)}"
+        return (
+            f"{system}\n\nDiagnostic Context:\n{json.dumps(context, indent=2, ensure_ascii=False)}"
+        )
 
     def _call_llm(self, prompt: str) -> str:
         try:
-            resp = self.client.models.generate_content(
-                model=self.model, contents=prompt
-            )
+            resp = self.client.models.generate_content(model=self.model, contents=prompt)
             return resp.text.strip() if resp.text else ""
         except genai_errors.ClientError as e:
             raise RuntimeError(self._friendly_error(e)) from e
@@ -83,6 +84,7 @@ class GeminiLlmService(LlmServiceGateway):
         if not text or not text.strip():
             return ""
         import json as _json
+
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end > start:
@@ -126,6 +128,7 @@ class GeminiLlmService(LlmServiceGateway):
         self, history: List[ChatMessage], new_message: str, diagnostic_context: Dict[str, Any]
     ) -> str:
         import json
+
         system = (
             "You are a clinical decision support assistant for chest X-ray analysis. "
             "You have a full diagnostic context with per-class pathology probabilities (15 NIH classes), "
