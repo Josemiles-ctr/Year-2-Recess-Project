@@ -108,7 +108,9 @@ def chat_assistant():
             "traditional_features": report_data["traditional_model"]["features"],
             "cnn_prediction": report_data["cnn_model"]["prediction"],
             "cnn_confidence": report_data["cnn_model"]["confidence"],
-            "per_class_probabilities": report_data.get("cnn_model", {}).get("per_class_probabilities", {}),
+            "per_class_probabilities": report_data.get("cnn_model", {}).get(
+                "per_class_probabilities", {}
+            ),
             "llm_narrative": report_data.get("llm_narrative", ""),
         }
 

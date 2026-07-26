@@ -11,9 +11,21 @@ from src.domain.entities import XRayScan, PredictionResult
 from src.interfaces.gateways import CnnModelGateway
 
 CLASSES = [
-    "Atelectasis", "Cardiomegaly", "Consolidation", "Edema", "Effusion",
-    "Emphysema", "Fibrosis", "Hernia", "Infiltration", "Mass",
-    "No Finding", "Nodule", "Pleural_Thickening", "Pneumonia", "Pneumothorax",
+    "Atelectasis",
+    "Cardiomegaly",
+    "Consolidation",
+    "Edema",
+    "Effusion",
+    "Emphysema",
+    "Fibrosis",
+    "Hernia",
+    "Infiltration",
+    "Mass",
+    "No Finding",
+    "Nodule",
+    "Pleural_Thickening",
+    "Pneumonia",
+    "Pneumothorax",
 ]
 
 
@@ -35,7 +47,7 @@ def _conv2d(inp: np.ndarray, kernel: np.ndarray, bias: np.ndarray, stride: int =
     for i in range(oh):
         for j in range(ow):
             h_start, w_start = i * stride, j * stride
-            patch = inp[:, h_start:h_start + kh, w_start:w_start + kw, :]
+            patch = inp[:, h_start : h_start + kh, w_start : w_start + kw, :]
             for k in range(f):
                 out[:, i, j, k] = np.sum(patch * kernel[..., k], axis=(1, 2, 3)) + bias[k]
     return out
@@ -56,7 +68,10 @@ def _max_pool2d(inp: np.ndarray, pool_size: int = 2) -> np.ndarray:
     out = np.zeros((b, oh, ow, c), dtype=np.float32)
     for i in range(oh):
         for j in range(ow):
-            out[:, i, j, :] = np.max(inp[:, i*pool_size:(i+1)*pool_size, j*pool_size:(j+1)*pool_size, :], axis=(1, 2))
+            out[:, i, j, :] = np.max(
+                inp[:, i * pool_size : (i + 1) * pool_size, j * pool_size : (j + 1) * pool_size, :],
+                axis=(1, 2),
+            )
     return out
 
 
@@ -64,8 +79,14 @@ def _global_avg_pool(inp: np.ndarray) -> np.ndarray:
     return np.mean(inp, axis=(1, 2))
 
 
-def _batch_norm(inp: np.ndarray, gamma: np.ndarray, beta: np.ndarray,
-                mean: np.ndarray, var: np.ndarray, eps: float = 0.001) -> np.ndarray:
+def _batch_norm(
+    inp: np.ndarray,
+    gamma: np.ndarray,
+    beta: np.ndarray,
+    mean: np.ndarray,
+    var: np.ndarray,
+    eps: float = 0.001,
+) -> np.ndarray:
     return gamma * (inp - mean) / np.sqrt(var + eps) + beta
 
 
@@ -95,18 +116,22 @@ class KerasCnnModel(CnnModelGateway):
         try:
             import h5py
         except ImportError:
-            raise RuntimeError("h5py is required to load Keras model weights. Install it with: pip install h5py")
+            raise RuntimeError(
+                "h5py is required to load Keras model weights. Install it with: pip install h5py"
+            )
 
         with zipfile.ZipFile(self.model_path) as z:
             with z.open("model.weights.h5") as f:
                 with h5py.File(f, "r") as h5:
                     w = {}
+
                     def _walk(name, obj):
                         if isinstance(obj, h5py.Dataset):
                             w[name] = obj[()]
                         elif isinstance(obj, h5py.Group):
                             for key in obj:
                                 _walk(f"{name}/{key}" if name else key, obj[key])
+
                     for key in h5:
                         _walk(key, h5[key])
         self._weights = w
@@ -124,20 +149,35 @@ class KerasCnnModel(CnnModelGateway):
         w = self._load_weights()
 
         x = _relu(_conv2d_same(inp, w["layers/conv2d/vars/0"], w["layers/conv2d/vars/1"]))
-        x = _batch_norm(x, w["layers/batch_normalization/vars/0"], w["layers/batch_normalization/vars/1"],
-                        w["layers/batch_normalization/vars/2"], w["layers/batch_normalization/vars/3"])
+        x = _batch_norm(
+            x,
+            w["layers/batch_normalization/vars/0"],
+            w["layers/batch_normalization/vars/1"],
+            w["layers/batch_normalization/vars/2"],
+            w["layers/batch_normalization/vars/3"],
+        )
 
         x = _max_pool2d(x, 2)
 
         x = _relu(_conv2d_same(x, w["layers/conv2d_1/vars/0"], w["layers/conv2d_1/vars/1"]))
-        x = _batch_norm(x, w["layers/batch_normalization_1/vars/0"], w["layers/batch_normalization_1/vars/1"],
-                        w["layers/batch_normalization_1/vars/2"], w["layers/batch_normalization_1/vars/3"])
+        x = _batch_norm(
+            x,
+            w["layers/batch_normalization_1/vars/0"],
+            w["layers/batch_normalization_1/vars/1"],
+            w["layers/batch_normalization_1/vars/2"],
+            w["layers/batch_normalization_1/vars/3"],
+        )
 
         x = _max_pool2d(x, 2)
 
         x = _relu(_conv2d_same(x, w["layers/conv2d_2/vars/0"], w["layers/conv2d_2/vars/1"]))
-        x = _batch_norm(x, w["layers/batch_normalization_2/vars/0"], w["layers/batch_normalization_2/vars/1"],
-                        w["layers/batch_normalization_2/vars/2"], w["layers/batch_normalization_2/vars/3"])
+        x = _batch_norm(
+            x,
+            w["layers/batch_normalization_2/vars/0"],
+            w["layers/batch_normalization_2/vars/1"],
+            w["layers/batch_normalization_2/vars/2"],
+            w["layers/batch_normalization_2/vars/3"],
+        )
 
         x = _global_avg_pool(x)
 
@@ -151,11 +191,21 @@ class KerasCnnModel(CnnModelGateway):
 
     def _thresholds(self) -> Dict[str, float]:
         return {
-            "Atelectasis": 0.05, "Cardiomegaly": 0.05, "Consolidation": 0.75,
-            "Edema": 0.05, "Effusion": 0.35, "Emphysema": 0.40,
-            "Fibrosis": 0.70, "Hernia": 0.05, "Infiltration": 0.45,
-            "Mass": 0.35, "No Finding": 0.55, "Nodule": 0.70,
-            "Pleural_Thickening": 0.35, "Pneumonia": 0.95, "Pneumothorax": 0.50,
+            "Atelectasis": 0.05,
+            "Cardiomegaly": 0.05,
+            "Consolidation": 0.75,
+            "Edema": 0.05,
+            "Effusion": 0.35,
+            "Emphysema": 0.40,
+            "Fibrosis": 0.70,
+            "Hernia": 0.05,
+            "Infiltration": 0.45,
+            "Mass": 0.35,
+            "No Finding": 0.55,
+            "Nodule": 0.70,
+            "Pleural_Thickening": 0.35,
+            "Pneumonia": 0.95,
+            "Pneumothorax": 0.50,
         }
 
     def predict(self, scan: XRayScan) -> PredictionResult:
