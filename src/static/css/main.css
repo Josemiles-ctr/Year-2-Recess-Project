@@ -11,6 +11,7 @@
     
     /* Restrained clinical palette */
     --primary: #9ac3a5;
+    --primary-hover: #7fb38d;
     --primary-strong: #79a988;
     --primary-glow: rgba(154, 195, 165, 0.16);
     --blue: #b4c5b7;
@@ -72,11 +73,18 @@ body {
 .logo {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 1.5rem;
     letter-spacing: -0.02em;
+}
+
+.logo-img {
+    height: 36px;
+    width: 36px;
+    border-radius: 8px;
+    object-fit: cover;
 }
 
 .clinic-icon {
@@ -143,8 +151,29 @@ body {
 }
 
 .hero-section {
+    position: relative;
     text-align: center;
     margin-bottom: 3.5rem;
+    padding: 6rem 2rem;
+    border-radius: 24px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('../images/background.jpg') center / cover no-repeat;
+    z-index: -2;
+}
+
+.hero-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(10, 14, 23, 0.88) 0%, rgba(10, 14, 23, 0.72) 100%);
+    z-index: -1;
 }
 
 .hero-title {
@@ -225,10 +254,42 @@ body {
     letter-spacing: 0.08em;
 }
 
-.upload-page { max-width: 850px; }
-.upload-page-intro { margin-bottom: 2.5rem; text-align: center; }
+.upload-page {
+    max-width: 850px;
+    position: relative;
+    isolation: isolate;
+}
+
+.upload-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url('../images/uploadbg.avif') center / cover no-repeat;
+    z-index: -2;
+}
+
+.upload-page::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(10, 14, 23, 0.92) 0%, rgba(10, 14, 23, 0.75) 100%);
+    z-index: -1;
+}
+
+.upload-page-intro { margin-bottom: 2.5rem; text-align: center; padding-top: 1rem; }
 .upload-page-intro h1 { font-family: var(--font-heading); font-size: 2.4rem; }
 .upload-page-intro p:last-child { margin-top: 0.8rem; color: #94a3b8; }
+
+.upload-prompt h2 {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.upload-section {
+    margin-bottom: 3rem;
+}
 
 /* Upload Container */
 .upload-container {
@@ -239,11 +300,14 @@ body {
     border: 2px dashed rgba(255, 255, 255, 0.15);
     padding: 3.5rem 2rem;
     transition: background 0.3s, border-color 0.3s;
+    background: rgba(15, 20, 30, 0.55);
+    backdrop-filter: blur(8px);
 }
 
 .upload-container.dragover {
     border-color: var(--primary);
-    background: rgba(154, 195, 165, 0.08);
+    background: rgba(154, 195, 165, 0.15);
+    backdrop-filter: blur(12px);
 }
 
 .icon-pulse {
@@ -269,6 +333,66 @@ body {
     width: 2.2rem;
     height: 2.2rem;
     color: var(--primary);
+}
+
+.upload-composer {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.5rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.upload-composer input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: inherit;
+}
+
+.upload-composer input::placeholder {
+    color: #64748b;
+}
+
+.upload-composer input:focus {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.attachment-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    flex-shrink: 0;
+}
+
+.attachment-button:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.attachment-button:active {
+    transform: scale(0.95);
+}
+
+.attachment-button svg {
+    width: 1.2rem;
+    height: 1.2rem;
 }
 
 .highlight-action {

@@ -9,12 +9,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}">
 </head>
 <body>
     <header class="app-header">
         <div class="header-container">
             <div class="logo">
-                <i data-lucide="microscope" class="clinic-icon"></i>
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan" class="logo-img">
                 <a href="{{ url_for('web.index') }}" class="home-link">AURA<span class="logo-highlight">Scan</span></a>
             </div>
             <div class="header-actions">
