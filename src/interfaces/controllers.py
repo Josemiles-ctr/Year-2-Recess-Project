@@ -23,11 +23,6 @@ class AnalyzeController:
             "status": "success",
             "filename": report.scan_details.filename,
             "timestamp": report.diagnosed_at.isoformat() + "Z",
-            "consensus": {
-                "verdict": report.consensus_verdict,
-                "risk_level": report.risk_level,
-                "confidence": report.overall_confidence,
-            },
             "traditional_model": {
                 "prediction": report.traditional_prediction.prediction_label,
                 "confidence": report.traditional_prediction.confidence_score,

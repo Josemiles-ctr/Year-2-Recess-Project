@@ -24,28 +24,42 @@
     </header>
 
     <main class="main-content report-layout">
-        <section class="consensus-card border-{{ data.consensus.risk_level.lower() }}">
-            <div class="consensus-badge-wrap">
-                <span class="verdict-label">Consensus</span>
-                <span class="verdict-value text-{{ data.consensus.risk_level.lower() }}">{{ data.consensus.verdict }}</span>
+        <div class="report-header">
+            <div class="report-meta">
+                <span class="m-label">File</span>
+                <span class="m-val truncate">{{ data.filename }}</span>
             </div>
-            <div class="consensus-metrics">
-                <div class="metric-item">
-                    <span class="m-label">Risk</span>
-                    <span class="m-val text-{{ data.consensus.risk_level.lower() }}">{{ data.consensus.risk_level }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="m-label">Confidence</span>
-                    <span class="m-val">{{ (data.consensus.confidence * 100) | round(1) }}%</span>
-                </div>
-                <div class="metric-item">
-                    <span class="m-label">File</span>
-                    <span class="m-val truncate">{{ data.filename }}</span>
-                </div>
-            </div>
-        </section>
+        </div>
 
         <div class="data-summary">
+            <div class="summary-panel">
+                <h3 class="panel-title" style="margin-bottom:1rem"><i data-lucide="sigma"></i> Traditional Model (RF)</h3>
+                <div class="top-prediction">
+                    <div class="model-stat-header">
+                        <span class="m-name"><i data-lucide="brain" class="text-blue"></i> RF &mdash; Top: {{ data.traditional_model.prediction }}</span>
+                        <span class="badge bg-blue-tint text-blue">{{ (data.traditional_model.confidence * 100) | round(1) }}%</span>
+                    </div>
+                    <div class="stat-progress-bar">
+                        <div class="stat-progress-fill bg-blue" style="width: {{ data.traditional_model.confidence * 100 }}%"></div>
+                    </div>
+                </div>
+                {% if data.traditional_model.features %}
+                <div class="pathology-strip">
+                    {% set ns = namespace(items=[]) %}
+                    {% for key, val in data.traditional_model.features.items() %}
+                        {% set _ = ns.items.append((key, val)) %}
+                    {% endfor %}
+                    {% for key, val in ns.items | sort(attribute=1, reverse=True) %}
+                    <div class="pill-row">
+                        <span class="pill-label">{{ key | replace('_', ' ') | title }}</span>
+                        <span class="pill-bar-bg"><span class="pill-bar-fill" style="width:{{ (val * 100) | round(1) }}%"></span></span>
+                        <span class="pill-pct {% if val >= 0.3 %}pct-high{% elif val >= 0.1 %}pct-mid{% endif %}">{{ (val * 100) | round(1) }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
             <div class="summary-panel">
                 <h3 class="panel-title" style="margin-bottom:1rem"><i data-lucide="activity"></i> Pathology Predictions</h3>
                 <div class="top-prediction">
