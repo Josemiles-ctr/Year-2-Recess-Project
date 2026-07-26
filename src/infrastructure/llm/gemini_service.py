@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+import re
+from typing import Any, Dict, List
 
 from google import genai
 from google.genai import errors as genai_errors
@@ -114,7 +115,7 @@ class GeminiLlmService(LlmServiceGateway):
         prompt = self._build_chat_prompt(history, new_message, diagnostic_context)
         try:
             return self._call_llm(prompt)
-        except Exception as exc:
+        except Exception:
             self.logger.exception("LLM chat follow-up failed")
             return (
                 "I am unable to generate a chat response at this time. "
@@ -151,7 +152,6 @@ class GeminiLlmService(LlmServiceGateway):
         msg = str(err)
         code = getattr(err, "code", 0) or 0
         if not code:
-            import re
             match = re.search(r"^(\d+)", msg)
             code = int(match.group(1)) if match else 0
         if code == 429:
