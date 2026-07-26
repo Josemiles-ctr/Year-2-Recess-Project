@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraScan — Report</title>
+    <title>AuraScan - Report</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,7 +37,7 @@
                 <h3 class="panel-title" style="margin-bottom:1rem"><i data-lucide="sigma"></i> Traditional Model (RF)</h3>
                 <div class="top-prediction">
                     <div class="model-stat-header">
-                        <span class="m-name"><i data-lucide="brain" class="text-blue"></i> RF &mdash; Top: {{ data.traditional_model.prediction }}</span>
+                        <span class="m-name"><i data-lucide="brain" class="text-blue"></i> RF - Top: {{ data.traditional_model.prediction }}</span>
                         <span class="badge bg-blue-tint text-blue">{{ (data.traditional_model.confidence * 100) | round(1) }}%</span>
                     </div>
                     <div class="stat-progress-bar">
@@ -65,7 +65,7 @@
                 <h3 class="panel-title" style="margin-bottom:1rem"><i data-lucide="activity"></i> Pathology Predictions</h3>
                 <div class="top-prediction">
                     <div class="model-stat-header">
-                        <span class="m-name"><i data-lucide="brain" class="text-purple"></i> CNN &mdash; Top: {{ data.cnn_model.prediction }}</span>
+                        <span class="m-name"><i data-lucide="brain" class="text-purple"></i> CNN - Top: {{ data.cnn_model.prediction }}</span>
                         <span class="badge bg-purple-tint text-purple">{{ (data.cnn_model.confidence * 100) | round(1) }}%</span>
                     </div>
                     <div class="stat-progress-bar">
@@ -106,7 +106,7 @@
                 <div class="chat-message assistant">
                     <div class="msg-avatar"><i data-lucide="bot"></i></div>
                     <div class="message-bubble">
-                        Hello — I've reviewed the predictions for this case. Ask me anything about the findings.
+                        Hello - I've reviewed the predictions for this case. Ask me anything about the findings.
                     </div>
                 </div>
                 {% if session.get('chat_history') %}
