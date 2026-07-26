@@ -397,55 +397,34 @@ body {
     max-width: 1100px;
 }
 
-.consensus-card {
+.report-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    padding: 0.5rem 0;
+}
+
+.report-meta {
+    display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    padding: 1.5rem 2rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border-glass);
-    border-radius: 16px;
-    border-left: 5px solid var(--border-glass);
+    gap: 0.6rem;
 }
 
-.border-high { border-left-color: var(--color-high); }
-.border-medium { border-left-color: var(--color-medium); }
-.border-low { border-left-color: var(--color-low); }
-.border-borderline { border-left-color: var(--color-borderline); }
-
-.text-high { color: var(--color-high); }
-.text-medium { color: var(--color-medium); }
-.text-low { color: var(--color-low); }
-.text-borderline { color: var(--color-borderline); }
-
-.bg-purple { background-color: var(--purple); }
-
-.consensus-badge-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.verdict-label {
-    font-size: 0.75rem;
-    color: #94a3b8;
+.m-label {
+    font-size: 0.72rem;
+    color: #64748b;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     font-weight: 600;
 }
 
-.verdict-value {
-    font-family: var(--font-heading);
-    font-size: 1.8rem;
-    font-weight: 700;
+.m-val {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #cbd5e1;
 }
 
-.consensus-metrics {
-    display: flex;
-    gap: 2.5rem;
-}
+.bg-purple { background-color: var(--purple); }
+.bg-blue { background-color: var(--blue); }
 
 .metric-item {
     display: flex;

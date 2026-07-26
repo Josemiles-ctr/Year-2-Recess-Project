@@ -36,9 +36,6 @@ class DiagnosticReport:
     scan_details: XRayScan
     traditional_prediction: PredictionResult
     cnn_prediction: PredictionResult
-    consensus_verdict: str
-    risk_level: str
-    overall_confidence: float
     llm_narrative: str
     diagnosed_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
 

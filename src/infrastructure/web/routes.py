@@ -103,9 +103,6 @@ def chat_assistant():
         chat_history = session.get("chat_history", [])
 
         diagnostic_context = {
-            "verdict": report_data["consensus"]["verdict"],
-            "risk_level": report_data["consensus"]["risk_level"],
-            "confidence": report_data["consensus"]["confidence"],
             "traditional_prediction": report_data["traditional_model"]["prediction"],
             "traditional_confidence": report_data["traditional_model"]["confidence"],
             "traditional_features": report_data["traditional_model"]["features"],
