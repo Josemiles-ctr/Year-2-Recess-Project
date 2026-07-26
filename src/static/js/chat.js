@@ -10,43 +10,61 @@ function renderIcons() {
 }
 
 function safeMarked(text) {
-    if (typeof marked?.parse === 'function') {
-        try { return marked.parse(text); } catch {}
-    }
     return simpleMarkdown(text);
 }
 
 function simpleMarkdown(text) {
-    let html = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    try {
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
 
-    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+        const lines = html.split('\n');
+        const out = [];
+        let inList = false;
 
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
 
-    html = html.replace(/^-{3,}\s*$/gm, '<hr>');
+            const h3 = line.match(/^### (.+)$/);
+            if (h3) { closeList(out, inList); inList = false; out.push('<h3>' + inline(h3[1]) + '</h3>'); continue; }
 
-    const lines = html.split('\n');
-    const out = [];
-    let inList = false;
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const liMatch = line.match(/^(\s*)[*-] (.+)$/);
-        if (liMatch) {
-            if (!inList) { out.push('<ul>'); inList = true; }
-            out.push('<li>' + liMatch[2] + '</li>');
-        } else {
+            const h2 = line.match(/^## (.+)$/);
+            if (h2) { closeList(out, inList); inList = false; out.push('<h2>' + inline(h2[1]) + '</h2>'); continue; }
+
+            const h1 = line.match(/^# (.+)$/);
+            if (h1) { closeList(out, inList); inList = false; out.push('<h1>' + inline(h1[1]) + '</h1>'); continue; }
+
+            if (/^-{3,}\s*$/.test(line)) { closeList(out, inList); inList = false; out.push('<hr>'); continue; }
+
+            const li = line.match(/^(\s*)[*-] (.+)$/);
+            if (li) {
+                if (!inList) { out.push('<ul>'); inList = true; }
+                out.push('<li>' + inline(li[2]) + '</li>');
+                continue;
+            }
+
             if (inList) { out.push('</ul>'); inList = false; }
-            out.push(line ? '<p>' + line + '</p>' : '<br>');
+            out.push(line ? '<p>' + inline(line) + '</p>' : '<br>');
         }
+        if (inList) out.push('</ul>');
+        return out.join('\n');
+    } catch {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
     }
+}
+
+function inline(text) {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+
+function closeList(out, inList) {
     if (inList) out.push('</ul>');
-    return out.join('\n');
 }
 
 function renderMarkdownMessages() {
@@ -206,12 +224,49 @@ function initChatbot() {
     const chatMessages = document.getElementById('chat-messages');
     const clearBtn = document.getElementById('clear-chat');
 
-    if (!chatForm) return;
+    if (!chatForm || !chatInput || !chatMessages) return;
+
+    function sendMessage() {
+        const query = chatInput.value.trim();
+        if (!query) return;
+
+        appendMessageBubble('user', query);
+        chatInput.value = '';
+
+        const typingBubble = appendTypingIndicator();
+        scrollChatToBottom();
+
+        (async () => {
+            try {
+                const resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: query }),
+                });
+                typingBubble.remove();
+
+                if (resp.ok) {
+                    const result = await resp.json();
+                    if (result.status === 'success') {
+                        appendMessageBubble('assistant', result.response.content);
+                    } else {
+                        showSnackbar(result.message || 'Could not get a response.', 'error');
+                    }
+                } else {
+                    showSnackbar('Connection lost.', 'error');
+                }
+            } catch {
+                typingBubble.remove();
+                showSnackbar('Request timed out.', 'error');
+            }
+            scrollChatToBottom();
+        })();
+    }
 
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            chatForm.requestSubmit();
+            sendMessage();
         }
     });
 
@@ -229,40 +284,9 @@ function initChatbot() {
         } catch { }
     });
 
-    chatForm.addEventListener('submit', async (e) => {
+    chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const query = chatInput.value.trim();
-        if (!query) return;
-
-        appendMessageBubble('user', query);
-        chatInput.value = '';
-
-        const typingBubble = appendTypingIndicator();
-        scrollChatToBottom();
-
-        try {
-            const resp = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: query }),
-            });
-            typingBubble.remove();
-
-            if (resp.ok) {
-                const result = await resp.json();
-                if (result.status === 'success') {
-                    appendMessageBubble('assistant', result.response.content);
-                } else {
-                    showSnackbar(result.message || 'Could not get a response.', 'error');
-                }
-            } else {
-                showSnackbar('Connection lost.', 'error');
-            }
-        } catch {
-            typingBubble.remove();
-            showSnackbar('Request timed out.', 'error');
-        }
-        scrollChatToBottom();
+        sendMessage();
     });
 
     function appendMessageBubble(role, content) {
@@ -278,7 +302,7 @@ function initChatbot() {
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        bubble.innerHTML = safeMarked(content);
+        try { bubble.innerHTML = safeMarked(content); } catch { bubble.textContent = content; }
         div.appendChild(bubble);
         chatMessages.appendChild(div);
         renderIcons();
