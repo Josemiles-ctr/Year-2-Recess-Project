@@ -55,14 +55,6 @@ data/raw/*.jpeg
 data/processed/
 data/models/
 
-# Ignore trained models
-models/
-
-*.joblib
-*.pkl
-*.pt
-*.pth
-
 
 # NIH raw dataset folders
 data/raw/train/
