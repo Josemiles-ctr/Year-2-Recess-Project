@@ -105,10 +105,14 @@ def chat_assistant():
         diagnostic_context = {
             "verdict": report_data["consensus"]["verdict"],
             "risk_level": report_data["consensus"]["risk_level"],
+            "confidence": report_data["consensus"]["confidence"],
             "traditional_prediction": report_data["traditional_model"]["prediction"],
             "traditional_confidence": report_data["traditional_model"]["confidence"],
+            "traditional_features": report_data["traditional_model"]["features"],
             "cnn_prediction": report_data["cnn_model"]["prediction"],
             "cnn_confidence": report_data["cnn_model"]["confidence"],
+            "per_class_probabilities": report_data.get("cnn_model", {}).get("per_class_probabilities", {}),
+            "llm_narrative": report_data.get("llm_narrative", ""),
         }
 
         result = controller.handle_message(chat_history, message, diagnostic_context)

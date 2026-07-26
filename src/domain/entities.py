@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import datetime
 
 
@@ -19,13 +19,14 @@ class XRayScan:
 class PredictionResult:
     """Domain representation of the outputs of classification engines."""
 
-    prediction_label: str  # e.g., "Malignant" or "Benign"
+    prediction_label: str  # e.g., "Malignant" or "Benign", or top pathology
     confidence_score: float  # Range: [0.0, 1.0]
     extracted_features: Dict[str, float] = field(
         default_factory=dict
     )  # Texture, contrast, LBP parameters
     grad_cam_path: Optional[str] = None  # CNN Activation heatmap location
     model_type: str = "Unknown"  # "Traditional ML" or "Deep CNN"
+    per_class_probabilities: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
