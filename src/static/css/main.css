@@ -474,13 +474,9 @@ body {
 }
 
 .data-summary {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 1.25rem;
-}
-
-@media (max-width: 800px) {
-    .data-summary { grid-template-columns: 1fr; }
 }
 
 .summary-panel {
@@ -738,6 +734,8 @@ body {
 }
 
 .chat-message.assistant .message-bubble strong { color: #e2e8f0; }
+
+.chat-message.assistant .message-bubble em { color: #b0b8c8; font-style: italic; }
 
 .chat-input-full {
     display: flex;
