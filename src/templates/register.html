@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuraScan - Create Account</title>
+    <meta name="description" content="Create an account on AuraScan clinical AI workspace for chest X-ray diagnostics.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}">
+</head>
+<body class="auth-body">
+    <div class="auth-page-wrapper">
+        <!-- Ambient Glowing Mesh Orbs -->
+        <div class="auth-ambient-glow glow-1"></div>
+        <div class="auth-ambient-glow glow-2"></div>
+
+        <div class="auth-grid-container">
+            <!-- Left Panel: Hero & Platform Showcase -->
+            <aside class="auth-hero-panel">
+                <div class="hero-panel-content">
+                    <div class="auth-brand-badge">
+                        <span class="status-dot"></span>
+                        <span>Clinical Workspace Setup</span>
+                    </div>
+
+                    <a href="{{ url_for('web.index') }}" class="auth-hero-logo">
+                        <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan Logo" class="hero-logo-img">
+                        <span class="hero-logo-text">AURA<span class="logo-highlight">Scan</span></span>
+                    </a>
+
+                    <h1 class="auth-hero-headline">
+                        Start Analyzing Chest Scans with <span class="gradient-text">Neural Intelligence</span>
+                    </h1>
+                    <p class="auth-hero-subtext">
+                        Join clinicians, researchers, and medical teams using AuraScan to accelerate diagnostic reporting and decision support.
+                    </p>
+
+                    <!-- Feature Cards List -->
+                    <div class="auth-features-list">
+                        <div class="auth-feature-item">
+                            <div class="feature-icon-box">
+                                <i data-lucide="sparkles"></i>
+                            </div>
+                            <div class="feature-info">
+                                <h3>Instant Multi-Class Insights</h3>
+                                <p>Automated feature scoring across normal, benign, and malignant findings.</p>
+                            </div>
+                        </div>
+                        <div class="auth-feature-item">
+                            <div class="feature-icon-box">
+                                <i data-lucide="bot"></i>
+                            </div>
+                            <div class="feature-info">
+                                <h3>Interactive AI Assistant</h3>
+                                <p>Query scan narratives, differential diagnostics, and clinical metrics in real time.</p>
+                            </div>
+                        </div>
+                        <div class="auth-feature-item">
+                            <div class="feature-icon-box">
+                                <i data-lucide="file-bar-chart"></i>
+                            </div>
+                            <div class="feature-info">
+                                <h3>Exportable PDF Reports</h3>
+                                <p>Generate comprehensive diagnostic summary reports with visual heatmaps.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Platform Trust Stats -->
+                    <div class="auth-stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-value">End-to-End</span>
+                            <span class="stat-label">Encryption</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-value">Dual Model</span>
+                            <span class="stat-label">Architecture</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-value">Zero Cost</span>
+                            <span class="stat-label">Workspace Setup</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Panel: Register Form -->
+            <main class="auth-form-panel">
+                <div class="auth-card-container">
+                    <div class="auth-nav-top">
+                        <a href="{{ url_for('web.index') }}" class="back-home-link">
+                            <i data-lucide="arrow-left"></i> Back to Home
+                        </a>
+                    </div>
+
+                    <div class="auth-card glass-card">
+                        <!-- Header -->
+                        <div class="auth-header">
+                            <div class="auth-mobile-logo">
+                                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan Logo" class="auth-logo">
+                            </div>
+                            <h2 class="auth-title">Create workspace account</h2>
+                            <p class="auth-subtitle">Get started with AuraScan AI diagnostics</p>
+                        </div>
+
+                        <!-- Error Alert -->
+                        {% if error %}
+                        <div class="auth-alert auth-alert-error" role="alert">
+                            <i data-lucide="alert-circle" class="alert-icon"></i>
+                            <span>{{ error }}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Form -->
+                        <form class="auth-form" id="register-form" method="POST" action="{{ url_for('web.register') }}">
+                            <div class="auth-field">
+                                <label for="email">Email address</label>
+                                <div class="input-wrapper">
+                                    <i data-lucide="mail" class="input-icon"></i>
+                                    <input type="email" id="email" name="email" placeholder="you@hospital.org" required autofocus autocomplete="email">
+                                </div>
+                            </div>
+
+                            <div class="auth-field">
+                                <label for="password">Password</label>
+                                <div class="input-wrapper">
+                                    <i data-lucide="lock" class="input-icon"></i>
+                                    <input type="password" id="password" name="password" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+                                    <button type="button" class="password-toggle-btn" id="toggle-password" aria-label="Toggle password visibility">
+                                        <i data-lucide="eye" id="toggle-icon"></i>
+                                    </button>
+                                </div>
+                                <!-- Password Strength Meter -->
+                                <div class="strength-meter-container" id="strength-container" style="display: none;">
+                                    <div class="strength-bar-bg">
+                                        <div class="strength-bar-fill" id="strength-bar"></div>
+                                    </div>
+                                    <div class="strength-text-row">
+                                        <span class="strength-label">Password strength:</span>
+                                        <span class="strength-val" id="strength-val">Weak</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="auth-field">
+                                <label for="confirm">Confirm password</label>
+                                <div class="input-wrapper">
+                                    <i data-lucide="shield-check" class="input-icon"></i>
+                                    <input type="password" id="confirm" name="confirm" placeholder="Repeat your password" required minlength="6" autocomplete="new-password">
+                                </div>
+                                <div class="match-hint" id="match-hint" style="display: none;"></div>
+                            </div>
+
+                            <div class="auth-form-options">
+                                <label class="custom-checkbox">
+                                    <input type="checkbox" name="terms" id="terms" required checked>
+                                    <span class="checkmark"><i data-lucide="check"></i></span>
+                                    <span class="checkbox-label">I agree to the <a href="#" onclick="event.preventDefault(); alert('AuraScan is a clinical support prototype for academic & diagnostic review.');" class="terms-link">Terms of Service</a> &amp; <a href="#" onclick="event.preventDefault(); alert('Data processing adheres to secure session handling and data privacy protocols.');" class="terms-link">Privacy Policy</a></span>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary auth-submit-btn" id="submit-btn">
+                                <span>Create Workspace Account</span>
+                                <i data-lucide="arrow-right" class="auth-btn-icon"></i>
+                            </button>
+                        </form>
+
+                        <div class="auth-footer">
+                            <p class="auth-footer-text">
+                                Already have an account? <a href="{{ url_for('web.login') }}" class="auth-action-link">Sign in</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Password Visibility Toggle
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.getElementById('toggle-password');
+            
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', () => {
+                    const isPassword = passwordInput.type === 'password';
+                    passwordInput.type = isPassword ? 'text' : 'password';
+                    
+                    const iconContainer = toggleBtn.querySelector('i');
+                    if (iconContainer) {
+                        iconContainer.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+                        lucide.createIcons();
+                    }
+                });
+            }
+
+            // Real-time Password Strength Meter
+            const strengthContainer = document.getElementById('strength-container');
+            const strengthBar = document.getElementById('strength-bar');
+            const strengthVal = document.getElementById('strength-val');
+
+            if (passwordInput && strengthContainer) {
+                passwordInput.addEventListener('input', () => {
+                    const val = passwordInput.value;
+                    if (!val) {
+                        strengthContainer.style.display = 'none';
+                        return;
+                    }
+                    strengthContainer.style.display = 'block';
+
+                    let score = 0;
+                    if (val.length >= 6) score += 1;
+                    if (val.length >= 10) score += 1;
+                    if (/[A-Z]/.test(val) || /[0-9]/.test(val)) score += 1;
+                    if (/[^A-Za-z0-9]/.test(val)) score += 1;
+
+                    if (score <= 1) {
+                        strengthBar.style.width = '25%';
+                        strengthBar.style.backgroundColor = '#e18b82';
+                        strengthVal.textContent = 'Weak';
+                        strengthVal.style.color = '#e18b82';
+                    } else if (score === 2) {
+                        strengthBar.style.width = '50%';
+                        strengthBar.style.backgroundColor = '#d1b47b';
+                        strengthVal.textContent = 'Fair';
+                        strengthVal.style.color = '#d1b47b';
+                    } else if (score === 3) {
+                        strengthBar.style.width = '75%';
+                        strengthBar.style.backgroundColor = '#9ac3a5';
+                        strengthVal.textContent = 'Good';
+                        strengthVal.style.color = '#9ac3a5';
+                    } else {
+                        strengthBar.style.width = '100%';
+                        strengthBar.style.backgroundColor = '#79a988';
+                        strengthVal.textContent = 'Strong (Enterprise)';
+                        strengthVal.style.color = '#79a988';
+                    }
+                });
+            }
+
+            // Password Match Real-time Check
+            const confirmInput = document.getElementById('confirm');
+            const matchHint = document.getElementById('match-hint');
+
+            function checkMatch() {
+                if (!confirmInput || !confirmInput.value || !passwordInput) {
+                    if (matchHint) matchHint.style.display = 'none';
+                    return;
+                }
+                matchHint.style.display = 'block';
+                if (confirmInput.value === passwordInput.value) {
+                    matchHint.textContent = '✓ Passwords match';
+                    matchHint.className = 'match-hint match-success';
+                } else {
+                    matchHint.textContent = '✕ Passwords do not match';
+                    matchHint.className = 'match-hint match-error';
+                }
+            }
+
+            if (confirmInput && passwordInput) {
+                confirmInput.addEventListener('input', checkMatch);
+                passwordInput.addEventListener('input', checkMatch);
+            }
+
+            // Form Submit Loading State
+            const registerForm = document.getElementById('register-form');
+            const submitBtn = document.getElementById('submit-btn');
+            if (registerForm && submitBtn) {
+                registerForm.addEventListener('submit', (e) => {
+                    if (confirmInput && passwordInput && confirmInput.value !== passwordInput.value) {
+                        e.preventDefault();
+                        matchHint.style.display = 'block';
+                        matchHint.textContent = '✕ Passwords do not match';
+                        matchHint.className = 'match-hint match-error';
+                        confirmInput.focus();
+                        return;
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('loading');
+                    submitBtn.innerHTML = `
+                        <i data-lucide="loader-2" class="icon-spin"></i>
+                        <span>Creating Account...</span>
+                    `;
+                    lucide.createIcons();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -54,7 +54,7 @@ data/raw/*.jpeg
 # Ignore processed/generated data
 data/processed/
 data/models/
-
+models/nih_chest_xray_rf_model.joblib
 
 # NIH raw dataset folders
 data/raw/train/
