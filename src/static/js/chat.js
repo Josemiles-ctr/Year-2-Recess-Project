@@ -1,20 +1,81 @@
-/* ==========================================================================
-   AuraScan Dynamic Interactivity Script (Group O Recess Project)
-   ========================================================================== */
-
 document.addEventListener('DOMContentLoaded', () => {
     renderIcons();
     initUploadPanel();
+    initSidebar();
     initChatbot();
+    renderMarkdownMessages();
 });
 
 function renderIcons() {
     window.lucide?.createIcons({ attrs: { 'stroke-width': 1.8 } });
 }
 
-/**
- * Displays a short, accessible in-app notification without using browser alerts.
- */
+function simpleMarkdown(text) {
+    try {
+        let html = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        const lines = html.split('\n');
+        const out = [];
+        let inList = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+
+            const h3 = line.match(/^### (.+)$/);
+            if (h3) { closeList(out, inList); inList = false; out.push('<h3>' + inline(h3[1]) + '</h3>'); continue; }
+
+            const h2 = line.match(/^## (.+)$/);
+            if (h2) { closeList(out, inList); inList = false; out.push('<h2>' + inline(h2[1]) + '</h2>'); continue; }
+
+            const h1 = line.match(/^# (.+)$/);
+            if (h1) { closeList(out, inList); inList = false; out.push('<h1>' + inline(h1[1]) + '</h1>'); continue; }
+
+            if (/^-{3,}\s*$/.test(line)) { closeList(out, inList); inList = false; out.push('<hr>'); continue; }
+
+            const li = line.match(/^(\s*)[*-] (.+)$/);
+            if (li) {
+                if (!inList) { out.push('<ul>'); inList = true; }
+                out.push('<li>' + inline(li[2]) + '</li>');
+                continue;
+            }
+
+            if (inList) { out.push('</ul>'); inList = false; }
+            out.push(line ? '<p>' + inline(line) + '</p>' : '<br>');
+        }
+        if (inList) out.push('</ul>');
+        return out.join('\n');
+    } catch {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+}
+
+function inline(text) {
+    return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+
+function closeList(out, inList) {
+    if (inList) out.push('</ul>');
+}
+
+function safeMarked(text) {
+    return simpleMarkdown(text);
+}
+
+function renderMarkdownMessages() {
+    document.querySelectorAll('.chat-message.assistant .message-bubble').forEach(el => {
+        if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr') && !/<[a-z][\s\S]*>/i.test(el.innerHTML)) {
+            el.innerHTML = safeMarked(el.innerHTML);
+        }
+    });
+}
+
 function showSnackbar(message, type = 'info') {
     const region = document.getElementById('snackbar-region');
     if (!region) return;
@@ -29,7 +90,6 @@ function showSnackbar(message, type = 'info') {
         : type === 'success'
             ? 'circle-check'
             : 'info');
-    icon.setAttribute('aria-hidden', 'true');
 
     const text = document.createElement('span');
     text.textContent = message;
@@ -37,7 +97,7 @@ function showSnackbar(message, type = 'info') {
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'snackbar-close';
-    close.setAttribute('aria-label', 'Dismiss notification');
+    close.setAttribute('aria-label', 'Dismiss');
     close.innerHTML = '<i data-lucide="x" aria-hidden="true"></i>';
 
     const dismiss = () => {
@@ -53,13 +113,70 @@ function showSnackbar(message, type = 'info') {
     window.setTimeout(dismiss, 5000);
 }
 
-/**
- * Handles all drag-and-drop and manual file uploads on the landing page
- */
+function initSidebar() {
+    const sidebar = document.getElementById('report-sidebar');
+    const overlay = document.getElementById('rs-overlay');
+    const toggleBtn = document.getElementById('rs-toggle');
+    const closeBtn = document.getElementById('rs-close');
+
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+        });
+    }
+
+    const closeSidebar = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('open');
+    };
+
+    closeBtn?.addEventListener('click', closeSidebar);
+    overlay?.addEventListener('click', closeSidebar);
+
+    // Session list item clicks & delete buttons
+    const sessionList = document.getElementById('session-list');
+    if (sessionList) {
+        sessionList.addEventListener('click', async (e) => {
+            const delBtn = e.target.closest('.rs-item-del');
+            const item = e.target.closest('.rs-item');
+
+            if (delBtn) {
+                e.stopPropagation();
+                const sid = delBtn.getAttribute('data-sid');
+                if (!sid) return;
+
+                if (confirm('Are you sure you want to delete this scan session?')) {
+                    try {
+                        const resp = await fetch(`/api/sessions/${sid}`, { method: 'DELETE' });
+                        if (resp.ok) {
+                            if (typeof CURRENT_SESSION_ID !== 'undefined' && String(CURRENT_SESSION_ID) === String(sid)) {
+                                window.location.href = '/report';
+                            } else {
+                                item?.remove();
+                                showSnackbar('Session deleted.', 'success');
+                            }
+                        }
+                    } catch {
+                        showSnackbar('Failed to delete session.', 'error');
+                    }
+                }
+                return;
+            }
+
+            if (item) {
+                const sid = item.getAttribute('data-sid');
+                if (sid && (typeof CURRENT_SESSION_ID === 'undefined' || String(CURRENT_SESSION_ID) !== String(sid))) {
+                    window.location.href = `/report?sid=${sid}`;
+                }
+            }
+        });
+    }
+}
+
 function initUploadPanel() {
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-input');
-    const browseBtn = document.getElementById('browse-btn');
     const progressContainer = document.getElementById('progress-container');
     const uploadPrompt = document.querySelector('.upload-prompt');
     const filenameDisplay = document.getElementById('filename-display');
@@ -69,67 +186,48 @@ function initUploadPanel() {
     const uploadComposer = document.getElementById('upload-composer');
     const uploadNote = document.getElementById('upload-note');
 
-    if (!dropzone) return; // Exit if not on landing upload page
+    if (!dropzone) return;
 
     uploadComposer?.addEventListener('click', (e) => e.stopPropagation());
+    dropzone.addEventListener('click', () => fileInput.click());
 
-    // Trigger input click when browse is clicked
-    browseBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.click();
-    });
-
-    dropzone.addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    // Drag-over styling
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
+    ['dragenter', 'dragover'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
             e.preventDefault();
             e.stopPropagation();
             dropzone.classList.add('dragover');
-        }, false);
+        });
     });
 
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropzone.addEventListener(eventName, (e) => {
+    ['dragleave', 'drop'].forEach(name => {
+        dropzone.addEventListener(name, (e) => {
             e.preventDefault();
             e.stopPropagation();
             dropzone.classList.remove('dragover');
-        }, false);
+        });
     });
 
-    // Handle dropped files
     dropzone.addEventListener('drop', (e) => {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleFileUpload(files[0]);
     });
 
-    // Handle manual select file
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            handleFileUpload(fileInput.files[0]);
-        }
+        if (fileInput.files.length > 0) handleFileUpload(fileInput.files[0]);
     });
 
     function handleFileUpload(file) {
-        // Validation: Verify it is an image
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (!allowedTypes.includes(file.type)) {
-            showSnackbar('Unsupported file format. Please upload a PNG or JPG X-Ray image.', 'error');
+        const allowed = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (!allowed.includes(file.type)) {
+            showSnackbar('Unsupported format. Please upload a PNG or JPG.', 'error');
             return;
         }
 
-        // Show progress panel
         uploadPrompt.style.display = 'none';
         progressContainer.hidden = false;
         progressContainer.style.display = 'block';
         filenameDisplay.textContent = file.name;
-        
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('note', uploadNote?.value.trim() || '');
@@ -137,48 +235,41 @@ function initUploadPanel() {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/analyze', true);
 
-        // Track upload progress
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                // Limit visual load percentage to 90% until backend processes predictions
-                const visualPercent = Math.round(percent * 0.9);
-                percentDisplay.textContent = `${visualPercent}%`;
-                progressFill.style.width = `${visualPercent}%`;
+                const pct = Math.round((e.loaded / e.total) * 100);
+                const vis = Math.round(pct * 0.9);
+                percentDisplay.textContent = `${vis}%`;
+                progressFill.style.width = `${vis}%`;
             }
         });
 
-        // Backend response
         xhr.onreadystatechange = () => {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    if (response.status === 'success') {
+                    const resp = JSON.parse(xhr.responseText);
+                    if (resp.status === 'success') {
                         percentDisplay.textContent = '100%';
                         progressFill.style.width = '100%';
-                        statusDisplay.innerHTML = '<i data-lucide="check" class="text-low"></i> Analysis complete. Rendering diagnostic dashboard...';
+                        statusDisplay.innerHTML = '<i data-lucide="check"></i> Complete. Loading report...';
                         renderIcons();
-                        
-                        // Small delay for visual completion, then redirect to report
-                        setTimeout(() => {
-                            window.location.href = '/report';
-                        }, 800);
+                        setTimeout(() => window.location.href = `/report?sid=${resp.session_id || ''}`, 600);
                     } else {
-                        resetUpload('Analysis failed: ' + response.message);
+                        resetUpload('Analysis failed: ' + resp.message);
                     }
                 } else {
-                    resetUpload('Server error occurred during processing. Status code: ' + xhr.status);
+                    resetUpload('Server error. Status: ' + xhr.status);
                 }
             }
         };
 
-        statusDisplay.innerHTML = '<i data-lucide="loader-circle" class="icon-spin"></i> Uploading scan vectors...';
+        statusDisplay.innerHTML = '<i data-lucide="loader-circle" class="icon-spin"></i> Processing...';
         renderIcons();
         xhr.send(formData);
     }
 
-    function resetUpload(errorMessage) {
-        showSnackbar(errorMessage, 'error');
+    function resetUpload(msg) {
+        showSnackbar(msg, 'error');
         uploadPrompt.style.display = 'block';
         progressContainer.hidden = true;
         progressContainer.style.display = 'none';
@@ -188,93 +279,142 @@ function initUploadPanel() {
     }
 }
 
-/**
- * Handles Q&A chat interactions on the report page
- */
 function initChatbot() {
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
+    const clearBtn = document.getElementById('clear-chat');
 
-    if (!chatForm) return; // Exit if not on report screen
+    if (!chatForm || !chatInput || !chatMessages) return;
 
-    // Always scroll to bottom of chat on load
-    scrollChatToBottom();
+    // Load Session Chat History from Backend
+    const sessionId = typeof CURRENT_SESSION_ID !== 'undefined' ? CURRENT_SESSION_ID : null;
+    if (sessionId) {
+        fetch(`/api/sessions/${sessionId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.session && Array.isArray(data.session.history)) {
+                    if (data.session.history.length > 0) {
+                        chatMessages.innerHTML = '';
+                        data.session.history.forEach(msg => {
+                            appendMessageBubble(msg.role, msg.content);
+                        });
+                        scrollChatToBottom();
+                    }
+                }
+            })
+            .catch(() => {});
+    }
 
-    chatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const userQuery = chatInput.value.trim();
-        if (!userQuery) return;
-        // Render User Bubble immediately
-        appendMessageBubble('user', userQuery);
+    function sendMessage() {
+        const query = chatInput.value.trim();
+        if (!query) return;
+
+        appendMessageBubble('user', query);
         chatInput.value = '';
-        
-        // Render typing animation bubble
+
         const typingBubble = appendTypingIndicator();
         scrollChatToBottom();
 
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: userQuery })
-            });
+        (async () => {
+            try {
+                const resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: query, session_id: sessionId }),
+                });
+                typingBubble.remove();
 
-            // Remove typing bubble
-            typingBubble.remove();
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.status === 'success') {
-                    appendMessageBubble('assistant', result.response.content);
+                if (resp.ok) {
+                    const result = await resp.json();
+                    if (result.status === 'success') {
+                        appendMessageBubble('assistant', result.response.content);
+                    } else {
+                        showSnackbar(result.message || 'Could not get a response.', 'error');
+                    }
                 } else {
-                    showSnackbar(result.message || 'The assistant could not answer that request.', 'error');
+                    showSnackbar('Connection lost.', 'error');
                 }
-            } else {
-                showSnackbar('Connection lost with the application service.', 'error');
+            } catch {
+                typingBubble.remove();
+                showSnackbar('Request timed out.', 'error');
             }
-        } catch (error) {
-            typingBubble.remove();
-            showSnackbar('The request timed out. Please try again.', 'error');
-        }
+            scrollChatToBottom();
+        })();
+    }
 
-        scrollChatToBottom();
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    scrollChatToBottom();
+
+    clearBtn?.addEventListener('click', async () => {
+        try {
+            await fetch('/api/chat/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
+            chatMessages.innerHTML = `
+                <div class="chat-message assistant">
+                    <div class="msg-avatar"><i data-lucide="bot"></i></div>
+                    <div class="message-bubble">Hello - I've reviewed the predictions for this case. Ask me anything about the findings.</div>
+                </div>`;
+            renderIcons();
+        } catch { }
+    });
+
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        sendMessage();
     });
 
     function appendMessageBubble(role, content) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-message ${role}`;
-        
+        const div = document.createElement('div');
+        div.className = `chat-message ${role}`;
+
+        if (role === 'assistant') {
+            const avatar = document.createElement('div');
+            avatar.className = 'msg-avatar';
+            avatar.innerHTML = '<i data-lucide="bot"></i>';
+            div.appendChild(avatar);
+        }
+
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        
-        // Format simple Markdown breaks to HTML breaks inside bubbles
-        bubble.innerHTML = content
-            .replace(/\n/g, '<br>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>');
-            
-        msgDiv.appendChild(bubble);
-        chatMessages.appendChild(msgDiv);
+        if (/<[a-z][\s\S]*>/i.test(content)) {
+            bubble.innerHTML = content;
+        } else {
+            try { bubble.innerHTML = safeMarked(content); } catch { bubble.textContent = content; }
+        }
+        div.appendChild(bubble);
+        chatMessages.appendChild(div);
+        renderIcons();
     }
 
     function appendTypingIndicator() {
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'chat-message assistant';
-        
+        const div = document.createElement('div');
+        div.className = 'chat-message assistant';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'msg-avatar';
+        avatar.innerHTML = '<i data-lucide="bot"></i>';
+        div.appendChild(avatar);
+
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        
         const dots = document.createElement('div');
         dots.className = 'typing-dots';
         dots.innerHTML = '<span></span><span></span><span></span>';
-        
         bubble.appendChild(dots);
-        typingDiv.appendChild(bubble);
-        chatMessages.appendChild(typingDiv);
-        return typingDiv;
+        div.appendChild(bubble);
+        chatMessages.appendChild(div);
+        renderIcons();
+        return div;
     }
 
     function scrollChatToBottom() {

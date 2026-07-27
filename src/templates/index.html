@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered X-Ray Diagnostic Hub | Group O</title>
+    <title>AuraScan - Home</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,17 +12,18 @@
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}">
 </head>
 <body>
     <header class="app-header">
         <div class="header-container">
             <div class="logo">
-                <i data-lucide="microscope" class="clinic-icon"></i>
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan" class="logo-img">
                 <span>AURA<span class="logo-highlight">Scan</span></span>
             </div>
             <nav class="nav-links">
                 <a href="#workflow" class="nav-link">How it works</a>
-                <a href="https://github.com" target="_blank" class="nav-link"><i data-lucide="github"></i> GitHub</a>
+                <a href="https://github.com/Josemiles-ctr/Year-2-Recess-Project" target="_blank" class="nav-link"><i data-lucide="github"></i> GitHub</a>
             </nav>
         </div>
     </header>

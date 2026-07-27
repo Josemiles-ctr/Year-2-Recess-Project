@@ -17,36 +17,24 @@ class AnalyzeController:
         self.predict_use_case = predict_use_case
 
     def handle_upload(self, filename: str, file_bytes: bytes) -> Dict[str, Any]:
-        """Task Assignee Implementation steps:
-        1. Validate parameters (check that filename is not empty and file_bytes are readable).
-        2. Run predict_use_case.execute(filename, file_bytes).
-        3. Serialize the returned DiagnosticReport domain object into a dictionary:
-           - Extract consensus details (verdict, risk, confidence).
-           - Extract traditional ML features and metrics.
-           - Extract CNN metrics and Grad-CAM image paths.
-           - Extract LLM textual summaries.
-        4. Return the serialized dictionary.
-        """
         report = self.predict_use_case.execute(filename, file_bytes)
+        cnn_probabilities = report.cnn_prediction.per_class_probabilities
+        rf_probabilities = report.traditional_prediction.per_class_probabilities
         return {
             "status": "success",
-            "simulation": True,
             "filename": report.scan_details.filename,
             "timestamp": report.diagnosed_at.isoformat() + "Z",
-            "consensus": {
-                "verdict": report.consensus_verdict,
-                "risk_level": report.risk_level,
-                "confidence": report.overall_confidence,
-            },
             "traditional_model": {
                 "prediction": report.traditional_prediction.prediction_label,
                 "confidence": report.traditional_prediction.confidence_score,
                 "features": report.traditional_prediction.extracted_features,
+                "per_class_probabilities": rf_probabilities,
             },
             "cnn_model": {
                 "prediction": report.cnn_prediction.prediction_label,
                 "confidence": report.cnn_prediction.confidence_score,
                 "grad_cam_path": report.cnn_prediction.grad_cam_path or "",
+                "per_class_probabilities": cnn_probabilities,
             },
             "llm_narrative": report.llm_narrative,
         }

@@ -1,15 +1,16 @@
-import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+import re
+from typing import Any, Dict, List
 
-from src.domain.entities import PredictionResult, ChatMessage
+from google import genai
+from google.genai import errors as genai_errors
+
+from src.domain.entities import ChatMessage, PredictionResult
 from src.interfaces.gateways import LlmServiceGateway
 
-try:
-    import google.generativeai as generativeai
-except ImportError:  # pragma: no cover
-    generativeai = None
+
+CHAT_MODEL = "gemini-flash-latest"
 
 
 class GeminiLlmService(LlmServiceGateway):
@@ -17,54 +18,22 @@ class GeminiLlmService(LlmServiceGateway):
         self.logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())
 
-        self.provider = os.getenv("LLM_PROVIDER", "auto").strip().lower()
-        self.api_key = os.getenv("LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
-        self.model = os.getenv("LLM_MODEL", "").strip()
-        self.client = None
-
-        self._configure_client()
-
-    def _configure_client(self) -> None:
-        if not self.api_key:
-            self.logger.warning("GeminiLlmService configured without an LLM API key.")
-            return
-
-        if self.provider in ("gemini", "google", "google gemini"):
-            if generativeai is None:
-                self.logger.warning(
-                    "Google Gemini SDK not installed; cannot initialize Gemini client."
-                )
-                return
-            generativeai.configure(api_key=self.api_key)
-            self.client = "gemini"
-            self.model = self.model or "gemini-1.0"
-            return
-
-        if generativeai is not None:
-            generativeai.configure(api_key=self.api_key)
-            self.client = "gemini"
-            self.model = self.model or "gemini-1.0"
-            return
-
-        self.logger.warning(
-            "GeminiLlmService did not find a supported LLM library; narrative generation will fallback."
-        )
+        api_key = os.getenv("LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY not set in environment")
+        self.client = genai.Client(api_key=api_key)
+        self.model = (os.getenv("LLM_MODEL") or CHAT_MODEL).strip()
 
     def generate_report_narrative(
         self, traditional_result: PredictionResult, cnn_result: PredictionResult
     ) -> str:
-        """Generate a structured clinical narrative for the diagnostic report."""
         context = self._build_diagnostic_context(traditional_result, cnn_result)
         prompt = self._build_prompt(context)
-
         try:
-            text, usage = self._call_llm(prompt)
-            self._log_token_usage(usage)
+            text = self._call_llm(prompt)
             narrative = self._parse_narrative(text)
-            if narrative:
-                return narrative
-            raise ValueError("LLM response did not return a valid narrative payload.")
-        except Exception as exc:  # pragma: no cover
+            return narrative or text
+        except Exception as exc:
             self.logger.exception("LLM narrative generation failed")
             return self._fallback_narrative(traditional_result, cnn_result, str(exc))
 
@@ -84,133 +53,71 @@ class GeminiLlmService(LlmServiceGateway):
             "cnn_prediction": cnn_result.prediction_label,
             "cnn_confidence": round(cnn_result.confidence_score, 3),
             "cnn_grad_cam_path": cnn_result.grad_cam_path or "Unavailable",
+            "cnn_per_class_probabilities": cnn_result.per_class_probabilities,
             "consensus_agreement": traditional_result.prediction_label
             == cnn_result.prediction_label,
-            "consensus_verdict": (
-                traditional_result.prediction_label
-                if traditional_result.prediction_label == cnn_result.prediction_label
-                else f"Discordant ({traditional_result.prediction_label} vs {cnn_result.prediction_label})"
-            ),
-            "average_confidence": round(
-                (traditional_result.confidence_score + cnn_result.confidence_score) / 2, 3
-            ),
         }
 
     def _build_prompt(self, context: Dict[str, Any]) -> str:
-        system_instruction = (
+        import json
+
+        system = (
             "You are a clinical-grade radiology AI assistant writing a cancer screening report for a chest X-ray. "
             "Use a structured, professional tone appropriate for an interdisciplinary clinical audience. "
-            "Produce a concise HTML narrative and a structured JSON envelope. "
-            "Do not hallucinate findings that are not present in the diagnostic context. "
-            "If the content is uncertain, emphasize the need for clinical confirmation and follow-up imaging."
+            "Produce a concise HTML narrative with sections: Summary of findings, Detailed explanation of model predictions, "
+            "Discussion of key features detected, Clinical recommendations and caveats, References to detected radiological patterns. "
+            "Return the response as valid HTML using h3/h4 headings and paragraphs. "
+            "Do not hallucinate findings not present in the diagnostic context."
+        )
+        return (
+            f"{system}\n\nDiagnostic Context:\n{json.dumps(context, indent=2, ensure_ascii=False)}"
         )
 
-        task_description = (
-            "Create an HTML narrative that includes the following sections: "
-            "Summary of findings, Detailed explanation of model predictions, Discussion of key features detected, "
-            "Clinical recommendations and caveats, and References to detected radiological patterns. "
-            "Return output as a JSON object with keys: narrative_html, summary, detailed_explanation, "
-            "feature_discussion, recommendations, radiological_references. "
-            "The narrative_html value must contain valid HTML markup using headings (for example <h3>) and paragraphs.",
-        )
-
-        payload = json.dumps(context, indent=2, ensure_ascii=False)
-        return f"{system_instruction}\n\n{task_description}\n\nDiagnostic Context:\n{payload}"
-
-    def _call_llm(self, prompt: str) -> Tuple[str, Dict[str, Any]]:
-        if self.client == "gemini":
-            if generativeai is None:
-                raise RuntimeError("Google Gemini SDK is unavailable.")
-            response = generativeai.responses.create(
-                model=self.model,
-                temperature=0.0,
-                max_output_tokens=512,
-                input=prompt,
-            )
-            if hasattr(response, "output_text") and response.output_text:
-                content = response.output_text.strip()
-            else:
-                content = str(response)
-            usage = {}
-            if hasattr(response, "metadata") and isinstance(response.metadata, dict):
-                usage = response.metadata.get("tokenUsage", {}) or response.metadata.get(
-                    "usage", {}
-                )
-            return content, usage
-
-        raise RuntimeError("No supported LLM client is configured for GeminiLlmService.")
+    def _call_llm(self, prompt: str) -> str:
+        try:
+            resp = self.client.models.generate_content(model=self.model, contents=prompt)
+            return resp.text.strip() if resp.text else ""
+        except genai_errors.ClientError as e:
+            raise RuntimeError(self._friendly_error(e)) from e
 
     def _parse_narrative(self, text: str) -> str:
         if not text or not text.strip():
             return ""
+        import json as _json
 
-        parsed = self._extract_json_payload(text)
-        if isinstance(parsed, dict) and isinstance(parsed.get("narrative_html"), str):
-            return parsed["narrative_html"].strip()
-
-        return text.strip()
-
-    def _extract_json_payload(self, text: str) -> Optional[Dict[str, Any]]:
         start = text.find("{")
         end = text.rfind("}")
-        if start == -1 or end == -1 or end <= start:
-            return None
-        candidate = text[start : end + 1]
-        try:
-            payload = json.loads(candidate)
-            if isinstance(payload, dict):
-                return payload
-        except json.JSONDecodeError:
-            pass
-        return None
-
-    def _log_token_usage(self, usage: Dict[str, Any]) -> None:
-        if not usage:
-            return
-        try:
-            prompt_tokens = usage.get("prompt_tokens") or usage.get("promptTokenCount")
-            completion_tokens = usage.get("completion_tokens") or usage.get("completionTokenCount")
-            total_tokens = usage.get("total_tokens") or usage.get("totalTokenCount")
-            self.logger.info(
-                "LLM token usage provider=%s model=%s prompt=%s completion=%s total=%s",
-                self.client,
-                self.model,
-                prompt_tokens,
-                completion_tokens,
-                total_tokens,
-            )
-        except Exception:
-            self.logger.debug("Unable to parse token usage from LLM response.")
+        if start != -1 and end > start:
+            candidate = text[start : end + 1]
+            try:
+                payload = _json.loads(candidate)
+                if isinstance(payload, dict) and isinstance(payload.get("narrative_html"), str):
+                    return payload["narrative_html"].strip()
+            except _json.JSONDecodeError:
+                pass
+        return text.strip()
 
     def _fallback_narrative(
-        self,
-        traditional_result: PredictionResult,
-        cnn_result: PredictionResult,
-        error: str,
+        self, traditional_result: PredictionResult, cnn_result: PredictionResult, error: str
     ) -> str:
         return (
             "<h3>Diagnostic Narrative Unavailable</h3>"
             "<p>The narrative summary could not be generated by the configured language model.</p>"
-            "<p>This report includes the raw model outputs below for review, but it is not a substitute for clinical interpretation.</p>"
             f"<p><strong>Traditional model:</strong> {traditional_result.prediction_label} "
             f"({traditional_result.confidence_score * 100:.1f}% confidence).</p>"
             f"<p><strong>CNN model:</strong> {cnn_result.prediction_label} "
             f"({cnn_result.confidence_score * 100:.1f}% confidence).</p>"
             f"<p><strong>Error:</strong> {error}</p>"
-            "<p>Please confirm this scan with a qualified radiologist and consider obtaining follow-up imaging.</p>"
+            "<p>Please confirm this scan with a qualified radiologist.</p>"
         )
 
     def chat_follow_up(
         self, history: List[ChatMessage], new_message: str, diagnostic_context: Dict[str, Any]
     ) -> str:
-        """Respond to follow-up chat queries using the active diagnostic context."""
         prompt = self._build_chat_prompt(history, new_message, diagnostic_context)
-
         try:
-            text, usage = self._call_llm(prompt)
-            self._log_token_usage(usage)
-            return text.strip()
-        except Exception:  # pragma: no cover
+            return self._call_llm(prompt)
+        except Exception:
             self.logger.exception("LLM chat follow-up failed")
             return (
                 "I am unable to generate a chat response at this time. "
@@ -218,26 +125,44 @@ class GeminiLlmService(LlmServiceGateway):
             )
 
     def _build_chat_prompt(
-        self,
-        history: List[ChatMessage],
-        new_message: str,
-        diagnostic_context: Dict[str, Any],
+        self, history: List[ChatMessage], new_message: str, diagnostic_context: Dict[str, Any]
     ) -> str:
-        system_instruction = (
-            "You are a clinical decision support assistant for radiology. "
-            "Use the diagnostic findings and model outputs to answer follow-up questions clearly, "
-            "concisely, and with appropriate clinical caution. "
-            "If the user asks about confidence, emphasize the model probabilities and the need for expert review. "
-            "If the question relates to next steps, recommend clinical validation and additional imaging when appropriate."
-        )
+        import json
 
+        system = (
+            "You are a clinical decision support assistant for chest X-ray analysis. "
+            "You have a full diagnostic context with per-class pathology probabilities (15 NIH classes), "
+            "a traditional ML model prediction, and an AI narrative summary. "
+            "Keep responses conversational but grounded in the provided data. "
+            "Reference specific pathology names and percentages when relevant. "
+            "You remember the full conversation history - build on previous exchanges naturally. "
+            "If the user asks something not covered by the context, say so clearly. "
+            "Always note that findings require clinical confirmation by a radiologist."
+        )
         context_payload = json.dumps(diagnostic_context, indent=2, ensure_ascii=False)
         chat_history_text = "\n".join(
-            f"{item.role.capitalize()}: {item.content.strip()}" for item in history
+            f"{'User' if m.role == 'user' else 'Assistant'}: {m.content.strip()}" for m in history
         )
         return (
-            f"{system_instruction}\n\n"
+            f"{system}\n\n"
             f"Diagnostic Context:\n{context_payload}\n\n"
             f"Conversation History:\n{chat_history_text}\n\n"
             f"User Question:\n{new_message.strip()}"
         )
+
+    @staticmethod
+    def _friendly_error(err: genai_errors.ClientError) -> str:
+        msg = str(err)
+        code = getattr(err, "code", 0) or 0
+        if not code:
+            match = re.search(r"^(\d+)", msg)
+            code = int(match.group(1)) if match else 0
+        if code == 429:
+            return "The AI service is temporarily out of requests due to quota limits. Please wait and try again."
+        if code == 403:
+            return "The AI service couldn't authenticate your API key. Please check your configuration."
+        if code == 400:
+            return "The request to the AI service was invalid. Try rephrasing your question."
+        if code == 404:
+            return "The AI model is not available. The service may be updating."
+        return "The AI service returned an unexpected error. Please try again later."
