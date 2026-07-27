@@ -19,6 +19,7 @@ class AnalyzeController:
     def handle_upload(self, filename: str, file_bytes: bytes) -> Dict[str, Any]:
         report = self.predict_use_case.execute(filename, file_bytes)
         cnn_probabilities = report.cnn_prediction.per_class_probabilities
+        rf_probabilities = report.traditional_prediction.per_class_probabilities
         return {
             "status": "success",
             "filename": report.scan_details.filename,
@@ -27,6 +28,7 @@ class AnalyzeController:
                 "prediction": report.traditional_prediction.prediction_label,
                 "confidence": report.traditional_prediction.confidence_score,
                 "features": report.traditional_prediction.extracted_features,
+                "per_class_probabilities": rf_probabilities,
             },
             "cnn_model": {
                 "prediction": report.cnn_prediction.prediction_label,
