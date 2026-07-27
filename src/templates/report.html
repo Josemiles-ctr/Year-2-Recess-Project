@@ -51,7 +51,16 @@
                     <h1 class="rm-title"><span class="logo-highlight">AuraScan</span> Report</h1>
                     <span class="rm-subtitle">{{ session_data.scan_filename }}</span>
                 </div>
-                <a href="{{ url_for('web.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="home"></i></a>
+                <!-- Updated header actions with theme toggle -->
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <!-- Theme Toggle Button -->
+                    <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+                        <i data-lucide="sun"></i>
+                    </button>
+                    <a href="{{ url_for('web.index') }}" class="btn btn-secondary btn-sm">
+                        <i data-lucide="home"></i>
+                    </a>
+                </div>
             </header>
 
             <div class="report-scroll">
@@ -133,5 +142,7 @@
         const CURRENT_SESSION_ID = {{ current_session_id }};
     </script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <!-- Theme Toggle Script -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </body>
 </html>

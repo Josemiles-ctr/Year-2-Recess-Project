@@ -14,11 +14,20 @@
 <body>
     <header class="app-header">
         <div class="header-container">
-            <div class="logo"><img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan" class="logo-img"><a href="{{ url_for('web.index') }}" class="home-link">AURA<span class="logo-highlight">Scan</span></a></div>
-            <div class="header-actions">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan" class="logo-img">
+                <a href="{{ url_for('web.index') }}" class="home-link">AURA<span class="logo-highlight">Scan</span></a>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 0.75rem; align-items: center;">
                 {% if has_sessions %}
-                <a href="{{ url_for('web.report_page') }}" class="btn btn-primary btn-sm"><i data-lucide="layout-dashboard"></i> View Reports</a>
+                <a href="{{ url_for('web.report_page') }}" class="btn btn-primary btn-sm">
+                    <i data-lucide="layout-dashboard"></i> View Reports
+                </a>
                 {% endif %}
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+                    <i data-lucide="sun"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -50,5 +59,7 @@
     </main>
     <div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <!-- Theme Toggle Script -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </body>
 </html>
