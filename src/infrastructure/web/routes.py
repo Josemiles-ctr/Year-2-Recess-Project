@@ -3,18 +3,25 @@ import logging
 from datetime import datetime, timezone
 
 from flask import (
-    Blueprint, request, jsonify, render_template, session, redirect, url_for, current_app
+    Blueprint,
+    request,
+    jsonify,
+    render_template,
+    session,
+    redirect,
+    url_for,
+    current_app,
 )
 from flask_login import login_user, logout_user, login_required, current_user
 
 from src.infrastructure.database import db, User, ChatSession, ChatMessage
-from src.domain.entities import ChatMessage as ChatMessageEntity
 
 logger = logging.getLogger(__name__)
 web_bp = Blueprint("web", __name__)
 
 
 # ── Auth ──────────────────────────────────────────────────────────────
+
 
 @web_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -69,6 +76,7 @@ def logout():
 
 # ── Pages ─────────────────────────────────────────────────────────────
 
+
 @web_bp.route("/")
 def index():
     if current_user.is_authenticated:
@@ -108,8 +116,12 @@ def report_page():
             return redirect(url_for("web.upload_page"))
 
     scan_data = json.loads(session_obj.scan_data or "{}")
-    traditional_probs = sorted(scan_data.get("traditional_per_class_probabilities", {}).items(), key=lambda x: -x[1])
-    cnn_probs = sorted(scan_data.get("cnn_per_class_probabilities", {}).items(), key=lambda x: -x[1])
+    traditional_probs = sorted(
+        scan_data.get("traditional_per_class_probabilities", {}).items(), key=lambda x: -x[1]
+    )
+    cnn_probs = sorted(
+        scan_data.get("cnn_per_class_probabilities", {}).items(), key=lambda x: -x[1]
+    )
 
     session_data = {
         "scan_filename": session_obj.scan_filename,
@@ -147,6 +159,7 @@ def report_page():
 
 # ── Session API ───────────────────────────────────────────────────────
 
+
 @web_bp.route("/api/sessions", methods=["GET"])
 @login_required
 def list_sessions():
@@ -155,14 +168,21 @@ def list_sessions():
         .order_by(ChatSession.updated_at.desc())
         .all()
     )
-    return jsonify({
-        "status": "success",
-        "sessions": [
-            {"id": s.id, "title": s.title, "scan_filename": s.scan_filename,
-             "created_at": s.created_at.isoformat(), "message_count": s.messages.count()}
-            for s in sessions_list
-        ],
-    })
+    return jsonify(
+        {
+            "status": "success",
+            "sessions": [
+                {
+                    "id": s.id,
+                    "title": s.title,
+                    "scan_filename": s.scan_filename,
+                    "created_at": s.created_at.isoformat(),
+                    "message_count": s.messages.count(),
+                }
+                for s in sessions_list
+            ],
+        }
+    )
 
 
 @web_bp.route("/api/sessions/<int:sid>", methods=["GET"])
@@ -176,16 +196,18 @@ def get_session(sid):
         for m in session_obj.messages.order_by(ChatMessage.created_at).all()
     ]
     scan_data = json.loads(session_obj.scan_data or "{}")
-    return jsonify({
-        "status": "success",
-        "session": {
-            "id": session_obj.id,
-            "title": session_obj.title,
-            "scan_filename": session_obj.scan_filename,
-            "history": messages,
-            "scan_data": scan_data,
-        },
-    })
+    return jsonify(
+        {
+            "status": "success",
+            "session": {
+                "id": session_obj.id,
+                "title": session_obj.title,
+                "scan_filename": session_obj.scan_filename,
+                "history": messages,
+                "scan_data": scan_data,
+            },
+        }
+    )
 
 
 @web_bp.route("/api/sessions/<int:sid>", methods=["DELETE"])
@@ -214,6 +236,7 @@ def update_session_title(sid):
 
 # ── Analyze ───────────────────────────────────────────────────────────
 
+
 @web_bp.route("/api/analyze", methods=["POST"])
 @login_required
 def analyze_scan():
@@ -231,15 +254,21 @@ def analyze_scan():
             scan_data = {
                 "traditional_prediction": response_data["traditional_model"]["prediction"],
                 "traditional_confidence": response_data["traditional_model"]["confidence"],
-                "traditional_per_class_probabilities": response_data["traditional_model"].get("per_class_probabilities", {}),
+                "traditional_per_class_probabilities": response_data["traditional_model"].get(
+                    "per_class_probabilities", {}
+                ),
                 "cnn_prediction": response_data["cnn_model"]["prediction"],
                 "cnn_confidence": response_data["cnn_model"]["confidence"],
-                "cnn_per_class_probabilities": response_data["cnn_model"].get("per_class_probabilities", {}),
+                "cnn_per_class_probabilities": response_data["cnn_model"].get(
+                    "per_class_probabilities", {}
+                ),
                 "llm_narrative": response_data.get("llm_narrative", ""),
             }
             session_obj = ChatSession(
                 user_id=current_user.id,
-                title=response_data.get("llm_narrative", response_data["traditional_model"]["prediction"]),
+                title=response_data.get(
+                    "llm_narrative", response_data["traditional_model"]["prediction"]
+                ),
                 scan_filename=file.filename,
                 scan_data=json.dumps(scan_data),
             )
@@ -254,6 +283,7 @@ def analyze_scan():
 
 
 # ── Chat ──────────────────────────────────────────────────────────────
+
 
 @web_bp.route("/api/chat", methods=["POST"])
 @login_required
@@ -274,7 +304,9 @@ def chat_assistant():
     diagnostic_context = {
         "traditional_prediction": scan_data.get("traditional_prediction", ""),
         "traditional_confidence": scan_data.get("traditional_confidence", 0),
-        "traditional_per_class_probabilities": scan_data.get("traditional_per_class_probabilities", {}),
+        "traditional_per_class_probabilities": scan_data.get(
+            "traditional_per_class_probabilities", {}
+        ),
         "cnn_prediction": scan_data.get("cnn_prediction", ""),
         "cnn_confidence": scan_data.get("cnn_confidence", 0),
         "cnn_per_class_probabilities": scan_data.get("cnn_per_class_probabilities", {}),
@@ -283,12 +315,7 @@ def chat_assistant():
 
     try:
         controller = current_app.config["CHAT_CONTROLLER"]
-        db_history = (
-            session_obj.messages.order_by(ChatMessage.created_at).all()
-        )
-        history = [
-            ChatMessageEntity(role=m.role, content=m.content) for m in db_history
-        ]
+        db_history = session_obj.messages.order_by(ChatMessage.created_at).all()
 
         result = controller.handle_message(
             [{"role": m.role, "content": m.content} for m in db_history],

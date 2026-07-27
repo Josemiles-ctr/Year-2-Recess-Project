@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Dict, Any, Optional
+from typing import Dict
 
 import joblib
 import numpy as np
@@ -65,13 +65,24 @@ class SklearnTraditionalModel(TraditionalModelGateway):
         mean_int = float(img.mean())
         std_int = float(img.std())
         edge_density = float((edges > 0).mean())
-        arr = np.array([
-            mean_int, std_int, edge_density,
-            0.0, 0.0,
-            0.0, 1.0,
-            0.0, 1.0,
-            0.0, 0.0, 1.0, 0.0,
-        ], dtype=np.float32)
+        arr = np.array(
+            [
+                mean_int,
+                std_int,
+                edge_density,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+            ],
+            dtype=np.float32,
+        )
         return arr
 
     def extract_features(self, scan: XRayScan) -> Dict[str, float]:
