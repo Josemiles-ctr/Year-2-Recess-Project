@@ -55,7 +55,8 @@ data/raw/*.jpeg
 data/processed/
 data/models/
 models/nih_chest_xray_rf_model.joblib
-
+aurascan.db
+/aurascan.db
 # NIH raw dataset folders
 data/raw/train/
 data/raw/test/
