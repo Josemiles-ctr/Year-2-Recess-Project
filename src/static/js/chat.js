@@ -386,7 +386,11 @@ function initChatbot() {
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        try { bubble.innerHTML = safeMarked(content); } catch { bubble.textContent = content; }
+        if (/<[a-z][\s\S]*>/i.test(content)) {
+            bubble.innerHTML = content;
+        } else {
+            try { bubble.innerHTML = safeMarked(content); } catch { bubble.textContent = content; }
+        }
         div.appendChild(bubble);
         chatMessages.appendChild(div);
         renderIcons();

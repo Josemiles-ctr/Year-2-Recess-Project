@@ -30,7 +30,7 @@
                     <div class="rs-item-icon"><i data-lucide="file-text"></i></div>
                     <div class="rs-item-info">
                         <div class="rs-item-title">{{ s.title }}</div>
-                        <div class="rs-item-meta">{{ s.scan_filename }}</div>
+                        <div class="rs-item-meta">{{ s.created_at.strftime('%b %d, %Y · %H:%M') }}</div>
                     </div>
                     <button class="rs-item-del" data-sid="{{ s.id }}" title="Delete session"><i data-lucide="trash-2"></i></button>
                 </div>
