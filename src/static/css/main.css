@@ -80,6 +80,10 @@
     --msg-user-bg: var(--primary);
     --msg-user-color: #fff;
     --msg-assistant-bg: rgba(0, 0, 0, 0.03);
+
+    /* Override legacy backward-compat tokens */
+    --bg-dark: var(--bg-primary);
+    --bg-card: var(--bg-secondary);
 }
 
 /* ==========================================================================
