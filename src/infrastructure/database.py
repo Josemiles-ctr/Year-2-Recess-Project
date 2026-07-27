@@ -14,7 +14,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    sessions = db.relationship("ChatSession", backref="user", lazy="dynamic", cascade="all, delete-orphan")
+    sessions = db.relationship(
+        "ChatSession", backref="user", lazy="dynamic", cascade="all, delete-orphan"
+    )
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
@@ -32,9 +34,15 @@ class ChatSession(db.Model):
     scan_filename = db.Column(db.String(300), default="")
     scan_data = db.Column(db.Text, default="{}")
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
-    messages = db.relationship("ChatMessage", backref="session", lazy="dynamic", cascade="all, delete-orphan")
+    messages = db.relationship(
+        "ChatMessage", backref="session", lazy="dynamic", cascade="all, delete-orphan"
+    )
 
 
 class ChatMessage(db.Model):
