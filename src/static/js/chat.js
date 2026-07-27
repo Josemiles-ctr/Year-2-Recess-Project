@@ -1,16 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     renderIcons();
     initUploadPanel();
+    initSidebar();
     initChatbot();
     renderMarkdownMessages();
 });
 
 function renderIcons() {
     window.lucide?.createIcons({ attrs: { 'stroke-width': 1.8 } });
-}
-
-function safeMarked(text) {
-    return simpleMarkdown(text);
 }
 
 function simpleMarkdown(text) {
@@ -67,9 +64,13 @@ function closeList(out, inList) {
     if (inList) out.push('</ul>');
 }
 
+function safeMarked(text) {
+    return simpleMarkdown(text);
+}
+
 function renderMarkdownMessages() {
     document.querySelectorAll('.chat-message.assistant .message-bubble').forEach(el => {
-        if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr')) {
+        if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr') && !/<[a-z][\s\S]*>/i.test(el.innerHTML)) {
             el.innerHTML = safeMarked(el.innerHTML);
         }
     });
@@ -112,6 +113,67 @@ function showSnackbar(message, type = 'info') {
     window.setTimeout(dismiss, 5000);
 }
 
+function initSidebar() {
+    const sidebar = document.getElementById('report-sidebar');
+    const overlay = document.getElementById('rs-overlay');
+    const toggleBtn = document.getElementById('rs-toggle');
+    const closeBtn = document.getElementById('rs-close');
+
+    if (toggleBtn && sidebar && overlay) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+        });
+    }
+
+    const closeSidebar = () => {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('open');
+    };
+
+    closeBtn?.addEventListener('click', closeSidebar);
+    overlay?.addEventListener('click', closeSidebar);
+
+    // Session list item clicks & delete buttons
+    const sessionList = document.getElementById('session-list');
+    if (sessionList) {
+        sessionList.addEventListener('click', async (e) => {
+            const delBtn = e.target.closest('.rs-item-del');
+            const item = e.target.closest('.rs-item');
+
+            if (delBtn) {
+                e.stopPropagation();
+                const sid = delBtn.getAttribute('data-sid');
+                if (!sid) return;
+
+                if (confirm('Are you sure you want to delete this scan session?')) {
+                    try {
+                        const resp = await fetch(`/api/sessions/${sid}`, { method: 'DELETE' });
+                        if (resp.ok) {
+                            if (typeof CURRENT_SESSION_ID !== 'undefined' && String(CURRENT_SESSION_ID) === String(sid)) {
+                                window.location.href = '/report';
+                            } else {
+                                item?.remove();
+                                showSnackbar('Session deleted.', 'success');
+                            }
+                        }
+                    } catch {
+                        showSnackbar('Failed to delete session.', 'error');
+                    }
+                }
+                return;
+            }
+
+            if (item) {
+                const sid = item.getAttribute('data-sid');
+                if (sid && (typeof CURRENT_SESSION_ID === 'undefined' || String(CURRENT_SESSION_ID) !== String(sid))) {
+                    window.location.href = `/report?sid=${sid}`;
+                }
+            }
+        });
+    }
+}
+
 function initUploadPanel() {
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-input');
@@ -127,7 +189,6 @@ function initUploadPanel() {
     if (!dropzone) return;
 
     uploadComposer?.addEventListener('click', (e) => e.stopPropagation());
-
     dropzone.addEventListener('click', () => fileInput.click());
 
     ['dragenter', 'dragover'].forEach(name => {
@@ -192,7 +253,7 @@ function initUploadPanel() {
                         progressFill.style.width = '100%';
                         statusDisplay.innerHTML = '<i data-lucide="check"></i> Complete. Loading report...';
                         renderIcons();
-                        setTimeout(() => window.location.href = '/report', 600);
+                        setTimeout(() => window.location.href = `/report?sid=${resp.session_id || ''}`, 600);
                     } else {
                         resetUpload('Analysis failed: ' + resp.message);
                     }
@@ -226,6 +287,25 @@ function initChatbot() {
 
     if (!chatForm || !chatInput || !chatMessages) return;
 
+    // Load Session Chat History from Backend
+    const sessionId = typeof CURRENT_SESSION_ID !== 'undefined' ? CURRENT_SESSION_ID : null;
+    if (sessionId) {
+        fetch(`/api/sessions/${sessionId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.session && Array.isArray(data.session.history)) {
+                    if (data.session.history.length > 0) {
+                        chatMessages.innerHTML = '';
+                        data.session.history.forEach(msg => {
+                            appendMessageBubble(msg.role, msg.content);
+                        });
+                        scrollChatToBottom();
+                    }
+                }
+            })
+            .catch(() => {});
+    }
+
     function sendMessage() {
         const query = chatInput.value.trim();
         if (!query) return;
@@ -241,7 +321,7 @@ function initChatbot() {
                 const resp = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: query }),
+                    body: JSON.stringify({ message: query, session_id: sessionId }),
                 });
                 typingBubble.remove();
 
@@ -274,7 +354,11 @@ function initChatbot() {
 
     clearBtn?.addEventListener('click', async () => {
         try {
-            await fetch('/api/chat/clear', { method: 'POST' });
+            await fetch('/api/chat/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
             chatMessages.innerHTML = `
                 <div class="chat-message assistant">
                     <div class="msg-avatar"><i data-lucide="bot"></i></div>
@@ -302,7 +386,11 @@ function initChatbot() {
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        try { bubble.innerHTML = safeMarked(content); } catch { bubble.textContent = content; }
+        if (/<[a-z][\s\S]*>/i.test(content)) {
+            bubble.innerHTML = content;
+        } else {
+            try { bubble.innerHTML = safeMarked(content); } catch { bubble.textContent = content; }
+        }
         div.appendChild(bubble);
         chatMessages.appendChild(div);
         renderIcons();
