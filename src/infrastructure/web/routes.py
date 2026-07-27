@@ -19,7 +19,7 @@ web_bp = Blueprint("web", __name__)
 @web_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("web.upload_page"))
+        return redirect(url_for("web.report_page"))
     error = None
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
@@ -28,7 +28,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             next_page = session.pop("next", None)
-            return redirect(next_page or url_for("web.upload_page"))
+            return redirect(next_page or url_for("web.report_page"))
         error = "Invalid email or password."
     return render_template("login.html", error=error)
 
@@ -36,7 +36,7 @@ def login():
 @web_bp.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("web.upload_page"))
+        return redirect(url_for("web.report_page"))
     error = None
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
@@ -56,7 +56,7 @@ def register():
             db.session.add(user)
             db.session.commit()
             login_user(user)
-            return redirect(url_for("web.upload_page"))
+            return redirect(url_for("web.report_page"))
     return render_template("register.html", error=error)
 
 
@@ -71,13 +71,23 @@ def logout():
 
 @web_bp.route("/")
 def index():
+    if current_user.is_authenticated:
+        session_obj = (
+            ChatSession.query.filter_by(user_id=current_user.id)
+            .order_by(ChatSession.updated_at.desc())
+            .first()
+        )
+        if session_obj:
+            return redirect(url_for("web.report_page", sid=session_obj.id))
+        return redirect(url_for("web.upload_page"))
     return render_template("index.html")
 
 
 @web_bp.route("/upload")
 @login_required
 def upload_page():
-    return render_template("upload.html")
+    has_sessions = ChatSession.query.filter_by(user_id=current_user.id).count() > 0
+    return render_template("upload.html", has_sessions=has_sessions)
 
 
 @web_bp.route("/report")
@@ -117,6 +127,15 @@ def report_page():
         .order_by(ChatSession.updated_at.desc())
         .all()
     )
+
+    # Generate smart titles: use first meaningful line of narrative, fallback to scan_filename
+    for s in sessions_list:
+        if s.title and s.title != s.scan_filename:
+            # truncate AI-generated title to first meaningful segment
+            if len(s.title) > 80:
+                s.title = s.title[:80].rsplit(".", 1)[0] + "."
+            elif len(s.title) > 120:
+                s.title = s.title[:117] + "..."
 
     return render_template(
         "report.html",
@@ -220,7 +239,7 @@ def analyze_scan():
             }
             session_obj = ChatSession(
                 user_id=current_user.id,
-                title=response_data["traditional_model"]["prediction"],
+                title=response_data.get("llm_narrative", response_data["traditional_model"]["prediction"]),
                 scan_filename=file.filename,
                 scan_data=json.dumps(scan_data),
             )

@@ -15,7 +15,11 @@
     <header class="app-header">
         <div class="header-container">
             <div class="logo"><img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan" class="logo-img"><a href="{{ url_for('web.index') }}" class="home-link">AURA<span class="logo-highlight">Scan</span></a></div>
-            <a href="{{ url_for('web.index') }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left"></i> Back to overview</a>
+            <div class="header-actions">
+                {% if has_sessions %}
+                <a href="{{ url_for('web.report_page') }}" class="btn btn-primary btn-sm"><i data-lucide="layout-dashboard"></i> View Reports</a>
+                {% endif %}
+            </div>
         </div>
     </header>
     <main class="main-content upload-page">
