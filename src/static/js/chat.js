@@ -70,7 +70,7 @@ function safeMarked(text) {
 
 function renderMarkdownMessages() {
     document.querySelectorAll('.chat-message.assistant .message-bubble').forEach(el => {
-        if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr')) {
+        if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr') && !/<[a-z][\s\S]*>/i.test(el.innerHTML)) {
             el.innerHTML = safeMarked(el.innerHTML);
         }
     });
