@@ -95,10 +95,15 @@
             <!-- Right Panel: Sign In Form -->
             <main class="auth-form-panel">
                 <div class="auth-card-container">
-                    <div class="auth-nav-top">
+                    <!-- Updated auth-nav-top with theme toggle -->
+                    <div class="auth-nav-top" style="display: flex; justify-content: space-between; align-items: center;">
                         <a href="{{ url_for('web.index') }}" class="back-home-link">
                             <i data-lucide="arrow-left"></i> Back to Home
                         </a>
+                        <!-- Theme Toggle Button -->
+                        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+                            <i data-lucide="sun"></i>
+                        </button>
                     </div>
 
                     <div class="auth-card glass-card">
@@ -206,5 +211,7 @@
             }
         });
     </script>
+    <!-- Theme Toggle Script -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </body>
 </html>
