@@ -172,6 +172,7 @@ Open http://127.0.0.1:5000 in your browser.
 | AKATUKUNDA PRECIOUS PRAISE | 24/U/0147 |
 | ABUREK EMMANUEL | 24/U/02614/PS |
 | AGABA DORECK | 24/U/23685/PS |
+| Kibenge Victor Bulasio | 24/U/0544 |
 
 For inquiries: jeff.geoff.mis@gmail.com  
 GitHub: https://github.com/Josemiles-ctr/Year-2-Recess-Project
