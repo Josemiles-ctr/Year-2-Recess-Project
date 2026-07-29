@@ -68,8 +68,6 @@ function safeMarked(text) {
     return simpleMarkdown(text);
 }
 
-<<<<<<< HEAD
-=======
 function showConfirmDialog(message) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
@@ -133,7 +131,6 @@ function showConfirmDialog(message) {
     });
 }
 
->>>>>>> 5f5804248f420b87906c28fe0d19c7fbba4a75a9
 function renderMarkdownMessages() {
     document.querySelectorAll('.chat-message.assistant .message-bubble').forEach(el => {
         if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr') && !/<[a-z][\s\S]*>/i.test(el.innerHTML)) {
@@ -212,11 +209,7 @@ function initSidebar() {
                 const sid = delBtn.getAttribute('data-sid');
                 if (!sid) return;
 
-<<<<<<< HEAD
-                if (confirm('Are you sure you want to delete this scan session?')) {
-=======
                 if (await showConfirmDialog('Are you sure you want to delete this scan session?')) {
->>>>>>> 5f5804248f420b87906c28fe0d19c7fbba4a75a9
                     try {
                         const resp = await fetch(`/api/sessions/${sid}`, { method: 'DELETE' });
                         if (resp.ok) {
@@ -423,10 +416,7 @@ function initChatbot() {
     scrollChatToBottom();
 
     clearBtn?.addEventListener('click', async () => {
-<<<<<<< HEAD
-=======
         if (!await showConfirmDialog('Are you sure you want to clear all chat messages? This cannot be undone.')) return;
->>>>>>> 5f5804248f420b87906c28fe0d19c7fbba4a75a9
         try {
             await fetch('/api/chat/clear', {
                 method: 'POST',

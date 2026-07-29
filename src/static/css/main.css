@@ -2182,8 +2182,6 @@ body {
     .auth-title {
         font-size: 1.5rem;
     }
-<<<<<<< HEAD
-=======
 }
 
 /* ==========================================================================
@@ -2290,5 +2288,4 @@ body {
 
 .confirm-dialog-btn-danger:hover {
     background: #d0746b;
->>>>>>> 5f5804248f420b87906c28fe0d19c7fbba4a75a9
 }
