@@ -28,13 +28,6 @@ CLASS_LABELS = {
     14: "Pneumothorax",
 }
 
-FEATURE_KEYS = [
-    "feature_vector",
-    "mean_intensity",
-    "std_intensity",
-    "edge_density",
-]
-
 IMG_SIZE = 96
 PIXEL_FEATURES = IMG_SIZE * IMG_SIZE
 TABULAR_FEATURES = 13
@@ -42,36 +35,18 @@ TOTAL_FEATURES = PIXEL_FEATURES + TABULAR_FEATURES
 
 
 class SklearnTraditionalModel(TraditionalModelGateway):
-    def __init__(self, model_path: str = "", enable_fallback: bool = True, model=None):
-        if model is not None:
-            self._model = model
-            return
-
+    def __init__(self, model_path: str = ""):
         if not model_path:
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
             model_path = os.path.join(root, "models", "nih_chest_xray_rf_model.joblib")
         norm_path = os.path.abspath(model_path)
-
-        if os.path.isfile(norm_path):
-            self._model = joblib.load(norm_path)
-        else:
-            if not enable_fallback:
-                raise RuntimeError(f"Trained model not found at {norm_path}")
-            from sklearn.dummy import DummyClassifier
-            clf = DummyClassifier(strategy="prior")
-            clf.fit(np.zeros((2, TOTAL_FEATURES)), np.array([0, 1]))
-            self._model = clf
-            try:
-                parent = os.path.dirname(norm_path)
-                if parent:
-                    os.makedirs(parent, exist_ok=True)
-                joblib.dump(clf, norm_path)
-            except Exception:
-                pass
+        if not os.path.isfile(norm_path):
+            raise FileNotFoundError(f"Trained model not found at {norm_path}")
+        self._model = joblib.load(norm_path)
 
     def _load_image(self, image_bytes: bytes) -> np.ndarray:
         if not image_bytes:
-            raise ValueError("Unable to decode image: empty bytes")
+            raise ValueError("Empty image bytes")
         try:
             img = Image.open(io.BytesIO(image_bytes)).convert("L")
             return np.array(img, dtype=np.uint8)
@@ -110,23 +85,13 @@ class SklearnTraditionalModel(TraditionalModelGateway):
         )
         return arr
 
-    def extract_features(self, scan: XRayScan) -> Dict[str, Any]:
+    def extract_features(self, scan: XRayScan) -> Dict[str, float]:
         img = self._load_image(scan.image_bytes)
         img = self._preprocess(img)
         pixels = self._pixel_features(img)
         tabs = self._tabular_features(img)
         vec = np.concatenate([pixels, tabs])
-        edges = cv2.Canny(img, 100, 200)
-        return {
-            "feature_vector": vec,
-            "mean_intensity": float(img.mean()),
-            "std_intensity": float(img.std()),
-            "edge_density": float((edges > 0).mean()),
-            "contrast": float(img.std()),
-            "homogeneity": 1.0,
-            "correlation": 1.0,
-            "energy": float((img**2).mean()),
-        }
+        return {"feature_vector": vec}
 
     def predict(self, scan: XRayScan) -> PredictionResult:
         img = self._load_image(scan.image_bytes)
@@ -137,19 +102,8 @@ class SklearnTraditionalModel(TraditionalModelGateway):
 
         probs = self._model.predict_proba(feature_vector)
         prob_dict = {}
-
-        if isinstance(probs, (list, tuple)):
-            for i, cls_name in CLASS_LABELS.items():
-                if i < len(probs) and isinstance(probs[i], np.ndarray) and probs[i].ndim >= 2:
-                    prob_dict[cls_name] = float(probs[i][0][1]) if probs[i].shape[1] >= 2 else float(probs[i][0][0])
-                else:
-                    prob_dict[cls_name] = 0.0
-        elif isinstance(probs, np.ndarray):
-            row = probs[0] if probs.ndim == 2 else probs
-            for i, cls_name in CLASS_LABELS.items():
-                prob_dict[cls_name] = float(row[i]) if i < len(row) else 0.0
-        else:
-            prob_dict = {c: 0.0 for c in CLASS_LABELS.values()}
+        for i, cls_name in CLASS_LABELS.items():
+            prob_dict[cls_name] = float(probs[i][0][1]) if isinstance(probs[i], np.ndarray) else 0.0
 
         detected = {c: p for c, p in prob_dict.items() if p >= 0.5 and c != "No Finding"}
         if detected:

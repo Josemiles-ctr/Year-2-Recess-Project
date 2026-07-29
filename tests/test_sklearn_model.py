@@ -10,7 +10,6 @@ from src.infrastructure.ml.sklearn_model import (
     SklearnTraditionalModel,
     FEATURE_KEYS,
     CLASS_LABELS,
-    TOTAL_FEATURES,
 )
 
 
@@ -55,7 +54,7 @@ class TestSklearnTraditionalModel(unittest.TestCase):
         features = model_gateway.extract_features(scan)
         for key in FEATURE_KEYS:
             self.assertIn(key, features)
-            self.assertFalse(np.isnan(np.array(features[key])).any())
+            self.assertFalse(np.isnan(features[key]))
 
         result = model_gateway.predict(scan)
         # Assert prediction label is within configured CLASS_LABELS
@@ -106,7 +105,7 @@ class TestSklearnTraditionalModel(unittest.TestCase):
     def test_injected_model(self):
         """Test injecting an external model directly into gateway."""
         clf = LogisticRegression()
-        X_dummy = np.random.rand(4, TOTAL_FEATURES)
+        X_dummy = np.random.rand(4, len(FEATURE_KEYS))
         y_dummy = np.array([0, 1, 0, 1])
         clf.fit(X_dummy, y_dummy)
 

@@ -26,16 +26,24 @@ class GeminiLlmService(LlmServiceGateway):
 
     def generate_report_narrative(
         self, traditional_result: PredictionResult, cnn_result: PredictionResult
-    ) -> str:
+    ) -> tuple[str, str]:
         context = self._build_diagnostic_context(traditional_result, cnn_result)
         prompt = self._build_prompt(context)
         try:
             text = self._call_llm(prompt)
-            narrative = self._parse_narrative(text)
-            return narrative or text
+            narrative, title = self._parse_narrative(text)
+            return narrative or text, title or self._default_title(context)
         except Exception as exc:
             self.logger.exception("LLM narrative generation failed")
-            return self._fallback_narrative(traditional_result, cnn_result, str(exc))
+            return self._fallback_narrative(traditional_result, cnn_result, str(exc)), ""
+
+    @staticmethod
+    def _default_title(context: Dict[str, Any]) -> str:
+        trad = context.get("traditional_prediction", "")
+        cnn = context.get("cnn_prediction", "")
+        if trad == cnn:
+            return f"{trad} scan detected"
+        return f"ML: {trad}, CNN: {cnn}"
 
     def _build_diagnostic_context(
         self, traditional_result: PredictionResult, cnn_result: PredictionResult
@@ -66,7 +74,9 @@ class GeminiLlmService(LlmServiceGateway):
             "Use a structured, professional tone appropriate for an interdisciplinary clinical audience. "
             "Produce a concise HTML narrative with sections: Summary of findings, Detailed explanation of model predictions, "
             "Discussion of key features detected, Clinical recommendations and caveats, References to detected radiological patterns. "
-            "Return the response as valid HTML using h3/h4 headings and paragraphs. "
+            "Return the response as valid JSON with two keys: "
+            '"title" (a very short plain-text label for this scan, at most 7 words, no HTML, not starting with "Summary"), '
+            'and "narrative_html" (the full report as valid HTML using h3/h4 headings and paragraphs). '
             "Do not hallucinate findings not present in the diagnostic context."
         )
         return (
@@ -80,9 +90,9 @@ class GeminiLlmService(LlmServiceGateway):
         except genai_errors.ClientError as e:
             raise RuntimeError(self._friendly_error(e)) from e
 
-    def _parse_narrative(self, text: str) -> str:
+    def _parse_narrative(self, text: str) -> tuple[str, str]:
         if not text or not text.strip():
-            return ""
+            return "", ""
         import json as _json
 
         start = text.find("{")
@@ -91,11 +101,15 @@ class GeminiLlmService(LlmServiceGateway):
             candidate = text[start : end + 1]
             try:
                 payload = _json.loads(candidate)
-                if isinstance(payload, dict) and isinstance(payload.get("narrative_html"), str):
-                    return payload["narrative_html"].strip()
+                narrative = (
+                    payload.get("narrative_html") or payload.get("narrative", "")
+                ).strip()
+                title = (payload.get("title") or "").strip()
+                if narrative:
+                    return narrative, title
             except _json.JSONDecodeError:
                 pass
-        return text.strip()
+        return text.strip(), ""
 
     def _fallback_narrative(
         self, traditional_result: PredictionResult, cnn_result: PredictionResult, error: str
