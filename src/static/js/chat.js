@@ -321,7 +321,14 @@ function initUploadPanel() {
                         resetUpload('Analysis failed: ' + resp.message);
                     }
                 } else {
-                    resetUpload('Server error. Status: ' + xhr.status);
+                    let errorMsg = 'Upload failed. Status: ' + xhr.status;
+                    try {
+                        const errResp = JSON.parse(xhr.responseText);
+                        if (errResp && errResp.message) {
+                            errorMsg = errResp.message;
+                        }
+                    } catch (e) {}
+                    resetUpload(errorMsg);
                 }
             }
         };

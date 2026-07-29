@@ -49,3 +49,12 @@ class LlmServiceGateway(ABC):
     ) -> str:
         """Answers follow-up patient/doctor questions with dynamic diagnostic context."""
         pass
+
+    @abstractmethod
+    def validate_chest_xray(self, image_bytes: bytes, filename: str = "") -> Tuple[bool, str]:
+        """Verifies using Gemini Vision whether the image is a valid human chest X-ray radiograph.
+        Returns (is_chest_xray: bool, reason_or_description: str).
+        """
+        pass
+
+

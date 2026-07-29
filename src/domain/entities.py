@@ -3,6 +3,21 @@ from typing import Dict, Any, Optional
 import datetime
 
 
+class InvalidImageError(ValueError):
+    """Raised when an uploaded file is empty, corrupt, or not a valid image format."""
+    pass
+
+
+class NotAnXRayError(ValueError):
+    """Raised when an uploaded image is valid, but is not a recognized human chest radiograph (X-ray)."""
+    pass
+
+
+def _utc_now() -> datetime.datetime:
+    """Helper function to return current timezone-aware UTC timestamp."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 @dataclass
 class XRayScan:
     """Domain representation of an uploaded medical scan."""
@@ -12,7 +27,7 @@ class XRayScan:
     width: int = 0
     height: int = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
-    uploaded_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    uploaded_at: datetime.datetime = field(default_factory=_utc_now)
 
 
 @dataclass
@@ -38,7 +53,7 @@ class DiagnosticReport:
     cnn_prediction: PredictionResult
     llm_narrative: str
     session_title: str = ""
-    diagnosed_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    diagnosed_at: datetime.datetime = field(default_factory=_utc_now)
 
 
 @dataclass
@@ -47,4 +62,4 @@ class ChatMessage:
 
     role: str  # "user" or "assistant"
     content: str
-    timestamp: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
+    timestamp: datetime.datetime = field(default_factory=_utc_now)

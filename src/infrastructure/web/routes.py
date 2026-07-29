@@ -15,6 +15,7 @@ from flask import (
 from flask_login import login_user, logout_user, login_required, current_user
 
 from src.infrastructure.database import db, User, ChatSession, ChatMessage
+from src.domain.entities import InvalidImageError, NotAnXRayError
 
 logger = logging.getLogger(__name__)
 web_bp = Blueprint("web", __name__)
@@ -270,6 +271,9 @@ def analyze_scan():
             response_data["session_id"] = session_obj.id
 
         return jsonify(response_data)
+    except (InvalidImageError, NotAnXRayError) as e:
+        logger.warning("Scan analysis validation rejected file '%s': %s", file.filename, str(e))
+        return jsonify({"status": "error", "message": str(e)}), 400
     except Exception as e:
         logger.exception("Analyze failed")
         return jsonify({"status": "error", "message": str(e)}), 500

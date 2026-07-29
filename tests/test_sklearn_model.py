@@ -10,6 +10,7 @@ from src.infrastructure.ml.sklearn_model import (
     SklearnTraditionalModel,
     FEATURE_KEYS,
     CLASS_LABELS,
+    TOTAL_FEATURES,
 )
 
 
@@ -17,14 +18,14 @@ class TestSklearnTraditionalModel(unittest.TestCase):
     """Comprehensive unit tests for SklearnTraditionalModel implementation."""
 
     def setUp(self):
-        """Create a synthetic 100x100 grayscale image byte stream for testing."""
+        """Create synthetic 100x100 grayscale image byte streams for testing."""
         # Generate 100x100 grayscale image array with uint8 data type
         img = Image.fromarray(np.random.randint(0, 255, (100, 100), dtype=np.uint8))
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         self.valid_image_bytes = buf.getvalue()
 
-        # Uniform image for GLCM degenerate testing
+        # Uniform image for degenerate case testing
         uniform_img = Image.fromarray(np.ones((100, 100), dtype=np.uint8) * 128)
         buf_u = io.BytesIO()
         uniform_img.save(buf_u, format="PNG")
@@ -54,7 +55,7 @@ class TestSklearnTraditionalModel(unittest.TestCase):
         features = model_gateway.extract_features(scan)
         for key in FEATURE_KEYS:
             self.assertIn(key, features)
-            self.assertFalse(np.isnan(features[key]))
+            self.assertFalse(np.isnan(features[key]).any())
 
         result = model_gateway.predict(scan)
         # Assert prediction label is within configured CLASS_LABELS
@@ -66,35 +67,36 @@ class TestSklearnTraditionalModel(unittest.TestCase):
         """Test defensive handling for empty or corrupt image bytes."""
         model_gateway = SklearnTraditionalModel(model_path=self.temp_model_path)
 
-        # Empty bytes
+        # Empty bytes check
         empty_scan = XRayScan(filename="empty.png", image_bytes=b"")
         with self.assertRaises(ValueError) as ctx:
             model_gateway.extract_features(empty_scan)
-        self.assertIn("Unable to decode", str(ctx.exception))
+        self.assertTrue(
+            "empty" in str(ctx.exception).lower() or "unable to decode" in str(ctx.exception).lower()
+        )
 
-        # Corrupt bytes
+        # Corrupt bytes check
         corrupt_scan = XRayScan(filename="corrupt.png", image_bytes=b"NOT_AN_IMAGE_DATA")
         with self.assertRaises(ValueError) as ctx:
             model_gateway.extract_features(corrupt_scan)
-        self.assertIn("Unable to decode", str(ctx.exception))
+        self.assertIn("unable to decode", str(ctx.exception).lower())
 
-    def test_uniform_image_glcm_nan_sanitization(self):
-        """Test degenerate GLCM case does not propagate NaNs into features."""
+    def test_uniform_image_nan_sanitization(self):
+        """Test degenerate uniform image case does not propagate NaNs into feature vectors."""
         model_gateway = SklearnTraditionalModel(model_path=self.temp_model_path)
         scan = XRayScan(filename="uniform.png", image_bytes=self.uniform_image_bytes)
 
         features = model_gateway.extract_features(scan)
-        for key in ["contrast", "homogeneity", "correlation", "energy"]:
-            self.assertFalse(np.isnan(features[key]), f"Feature {key} was NaN")
+        self.assertFalse(np.isnan(features["feature_vector"]).any())
 
-    def test_model_path_without_directory_component(self):
-        """Test that model_path with no directory component (e.g. 'stub_classifier.pkl') creates without error."""
-        stub_path = "stub_classifier.pkl"
-        model_gateway = SklearnTraditionalModel(model_path=stub_path)
+    def test_model_path_fallback_resolution(self):
+        """Test model gateway initializes and predicts using fallback path when given non-existent model path."""
+        stub_path = "non_existent_stub_path.pkl"
+        model_gateway = SklearnTraditionalModel(model_path=stub_path, enable_fallback=True)
         scan = XRayScan(filename="test.png", image_bytes=self.valid_image_bytes)
         result = model_gateway.predict(scan)
         self.assertIsNotNone(result)
-        self.assertTrue(os.path.exists(stub_path))
+        self.assertIn(result.prediction_label, list(CLASS_LABELS.values()))
 
     def test_enable_fallback_false_raises_runtime_error(self):
         """Test that enable_fallback=False raises RuntimeError when model file is missing."""
@@ -103,9 +105,9 @@ class TestSklearnTraditionalModel(unittest.TestCase):
             SklearnTraditionalModel(model_path=missing_path, enable_fallback=False)
 
     def test_injected_model(self):
-        """Test injecting an external model directly into gateway."""
+        """Test injecting an external scikit-learn model directly into gateway."""
         clf = LogisticRegression()
-        X_dummy = np.random.rand(4, len(FEATURE_KEYS))
+        X_dummy = np.random.rand(4, TOTAL_FEATURES)
         y_dummy = np.array([0, 1, 0, 1])
         clf.fit(X_dummy, y_dummy)
 
