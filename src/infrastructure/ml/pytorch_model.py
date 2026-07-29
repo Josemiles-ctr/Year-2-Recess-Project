@@ -1,10 +1,6 @@
 from src.domain.entities import XRayScan, PredictionResult
 from src.interfaces.gateways import CnnModelGateway
 
-# TODO: Define your CNN neural network architecture using PyTorch (nn.Module).
-# Ensure it contains Convolutional layers, Max Pooling, and Dense classifiers.
-
-
 class PyTorchCnnModel(CnnModelGateway):
     """Approach 2: Deep Learning CNN (PyTorch).
 

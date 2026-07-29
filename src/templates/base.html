@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AuraScan{% endblock %}</title>
+    {% block meta %}{% endblock %}
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}">
+    {% block head %}{% endblock %}
+</head>
+<body{% block body_attrs %}{% endblock %}>
+    {% block header %}
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="AuraScan" class="logo-img">
+                <a href="{{ url_for('web.index') }}" class="home-link">AURA<span class="logo-highlight">Scan</span></a>
+            </div>
+            <nav class="nav-links">
+                <a href="#workflow" class="nav-link">How it works</a>
+                <a href="https://github.com/Josemiles-ctr/Year-2-Recess-Project" target="_blank" class="nav-link"><i data-lucide="github"></i> GitHub</a>
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+                    <i data-lucide="sun"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Recess Project Group O. BSE2301 Software Engineering Mini Project 2.</p>
+            <p>Academic supervisor contact: <a href="mailto:jeff.geoff.mis@gmail.com">jeff.geoff.mis@gmail.com</a></p>
+        </div>
+    </footer>
+    {% endblock %}
+
+    {% block snackbar %}
+    <div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
+    {% endblock %}
+
+    {% block scripts %}
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    {% endblock %}
+</body>
+</html>

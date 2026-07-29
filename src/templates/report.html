@@ -1,148 +1,138 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuraScan - Report</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/logo.jpg') }}">
-</head>
-<body>
-    <div class="report-app">
-        <aside class="report-sidebar" id="report-sidebar">
-            <div class="rs-header">
-                <div class="rs-brand">
-                    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="" class="rs-logo">
-                    <span>AURA<span class="logo-highlight">Scan</span></span>
+{% extends "base.html" %}
+{% block title %}AuraScan - Report{% endblock %}
+{% block header %}{% endblock %}
+{% block content %}
+<div class="report-app">
+    <aside class="report-sidebar" id="report-sidebar">
+        <div class="rs-header">
+            <div class="rs-brand">
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="" class="rs-logo">
+                <span>AURA<span class="logo-highlight">Scan</span></span>
+            </div>
+            <button class="rs-close" id="rs-close" aria-label="Close sidebar"><i data-lucide="x"></i></button>
+        </div>
+        <div class="rs-actions">
+            <a href="{{ url_for('web.upload_page') }}" class="btn btn-primary btn-sm rs-new-btn"><i data-lucide="plus"></i> New Scan</a>
+        </div>
+        <div class="rs-list" id="session-list">
+            {% for s in sessions %}
+            <div class="rs-item {% if s.id == current_session_id %}active{% endif %}" data-sid="{{ s.id }}">
+                <div class="rs-item-icon"><i data-lucide="file-text"></i></div>
+                <div class="rs-item-info">
+                    <div class="rs-item-title">{{ s.title }}</div>
+                    <div class="rs-item-meta">{{ s.created_at.strftime('%b %d, %Y · %H:%M') }}</div>
                 </div>
-                <button class="rs-close" id="rs-close" aria-label="Close sidebar"><i data-lucide="x"></i></button>
+                <button class="rs-item-del" data-sid="{{ s.id }}" title="Delete session"><i data-lucide="trash-2"></i></button>
             </div>
-            <div class="rs-actions">
-                <a href="{{ url_for('web.upload_page') }}" class="btn btn-primary btn-sm rs-new-btn"><i data-lucide="plus"></i> New Scan</a>
-            </div>
-            <div class="rs-list" id="session-list">
-                {% for s in sessions %}
-                <div class="rs-item {% if s.id == current_session_id %}active{% endif %}" data-sid="{{ s.id }}">
-                    <div class="rs-item-icon"><i data-lucide="file-text"></i></div>
-                    <div class="rs-item-info">
-                        <div class="rs-item-title">{{ s.title }}</div>
-                        <div class="rs-item-meta">{{ s.created_at.strftime('%b %d, %Y · %H:%M') }}</div>
-                    </div>
-                    <button class="rs-item-del" data-sid="{{ s.id }}" title="Delete session"><i data-lucide="trash-2"></i></button>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="rs-footer">
-                <div class="rs-user">{{ current_user.email }}</div>
-                <a href="{{ url_for('web.logout') }}" class="rs-logout"><i data-lucide="log-out"></i></a>
-            </div>
-        </aside>
+            {% endfor %}
+        </div>
+        <div class="rs-footer">
+            <div class="rs-user">{{ current_user.email }}</div>
+            <a href="{{ url_for('web.logout') }}" class="rs-logout"><i data-lucide="log-out"></i></a>
+        </div>
+    </aside>
 
-        <div class="rs-overlay" id="rs-overlay"></div>
+    <div class="rs-overlay" id="rs-overlay"></div>
 
-        <main class="report-main">
-            <header class="rm-header">
-                <button class="btn btn-icon rs-toggle" id="rs-toggle" aria-label="Toggle sidebar"><i data-lucide="panel-left"></i></button>
-                <div class="rm-header-info">
-                    <h1 class="rm-title"><span class="logo-highlight">AuraScan</span> Report</h1>
-                    <span class="rm-subtitle">{{ session_data.scan_filename }}</span>
-                </div>
-                <!-- Updated header actions with theme toggle -->
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <!-- Theme Toggle Button -->
-                    <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
-                        <i data-lucide="sun"></i>
-                    </button>
-                    <a href="{{ url_for('web.index') }}" class="btn btn-secondary btn-sm">
-                        <i data-lucide="home"></i>
-                    </a>
-                </div>
-            </header>
+    <main class="report-main">
+        <header class="rm-header">
+            <button class="btn btn-icon rs-toggle" id="rs-toggle" aria-label="Toggle sidebar"><i data-lucide="panel-left"></i></button>
+            <div class="rm-header-info">
+                <h1 class="rm-title"><span class="logo-highlight">AuraScan</span> Report</h1>
+                <span class="rm-subtitle">{{ session_data.scan_filename }}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+                    <i data-lucide="sun"></i>
+                </button>
+                <a href="{{ url_for('web.index') }}" class="btn btn-secondary btn-sm">
+                    <i data-lucide="home"></i>
+                </a>
+            </div>
+        </header>
 
-            <div class="report-scroll">
-                <div class="data-summary">
-                    <div class="model-row">
-                        <div class="summary-panel">
-                            <h3 class="panel-title"><i data-lucide="sigma"></i> Traditional Model (RF)</h3>
-                            <div class="top-prediction">
-                                <div class="model-stat-header">
-                                    <span class="m-name"><i data-lucide="brain" class="text-blue"></i> RF - Top: {{ session_data.traditional_prediction }}</span>
-                                    <span class="badge bg-blue-tint text-blue">{{ (session_data.traditional_confidence * 100) | round(1) }}%</span>
-                                </div>
-                                <div class="stat-progress-bar">
-                                    <div class="stat-progress-fill bg-blue" style="width: {{ session_data.traditional_confidence * 100 }}%"></div>
-                                </div>
+        <div class="report-scroll">
+            <div class="data-summary">
+                <div class="model-row">
+                    <div class="summary-panel">
+                        <h3 class="panel-title"><i data-lucide="sigma"></i> Traditional Model (RF)</h3>
+                        <div class="top-prediction">
+                            <div class="model-stat-header">
+                                <span class="m-name"><i data-lucide="brain" class="text-blue"></i> RF - Top: {{ session_data.traditional_prediction }}</span>
+                                <span class="badge bg-blue-tint text-blue">{{ (session_data.traditional_confidence * 100) | round(1) }}%</span>
                             </div>
-                            <div class="pathology-strip">
-                                {% for cls, prob in session_data.traditional_probs %}
-                                <div class="pill-row">
-                                    <span class="pill-label">{{ cls | replace('_', ' ') | title }}</span>
-                                    <span class="pill-bar-bg"><span class="pill-bar-fill" style="width:{{ (prob * 100) | round(1) }}%"></span></span>
-                                    <span class="pill-pct {% if prob >= 0.3 %}pct-high{% elif prob >= 0.1 %}pct-mid{% endif %}">{{ (prob * 100) | round(1) }}%</span>
-                                </div>
-                                {% endfor %}
+                            <div class="stat-progress-bar">
+                                <div class="stat-progress-fill bg-blue" style="width: {{ session_data.traditional_confidence * 100 }}%"></div>
                             </div>
                         </div>
-
-                        <div class="summary-panel">
-                            <h3 class="panel-title"><i data-lucide="activity"></i> CNN Pathology Predictions</h3>
-                            <div class="top-prediction">
-                                <div class="model-stat-header">
-                                    <span class="m-name"><i data-lucide="brain" class="text-purple"></i> CNN - Top: {{ session_data.cnn_prediction }}</span>
-                                    <span class="badge bg-purple-tint text-purple">{{ (session_data.cnn_confidence * 100) | round(1) }}%</span>
-                                </div>
-                                <div class="stat-progress-bar">
-                                    <div class="stat-progress-fill bg-purple" style="width: {{ session_data.cnn_confidence * 100 }}%"></div>
-                                </div>
+                        <div class="pathology-strip">
+                            {% for cls, prob in session_data.traditional_probs %}
+                            <div class="pill-row">
+                                <span class="pill-label">{{ cls | replace('_', ' ') | title }}</span>
+                                <span class="pill-bar-bg"><span class="pill-bar-fill" style="width:{{ (prob * 100) | round(1) }}%"></span></span>
+                                <span class="pill-pct {% if prob >= 0.3 %}pct-high{% elif prob >= 0.1 %}pct-mid{% endif %}">{{ (prob * 100) | round(1) }}%</span>
                             </div>
-                            <div class="pathology-strip">
-                                {% for cls, prob in session_data.cnn_probs %}
-                                <div class="pill-row">
-                                    <span class="pill-label">{{ cls | replace('_', ' ') | title }}</span>
-                                    <span class="pill-bar-bg"><span class="pill-bar-fill" style="width:{{ (prob * 100) | round(1) }}%"></span></span>
-                                    <span class="pill-pct {% if prob >= 0.3 %}pct-high{% elif prob >= 0.1 %}pct-mid{% endif %}">{{ (prob * 100) | round(1) }}%</span>
-                                </div>
-                                {% endfor %}
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
 
-                    <div class="summary-panel summary-fullwidth">
-                        <h3 class="panel-title"><i data-lucide="file-text"></i> AI Summary</h3>
-                        <div class="narrative-content" id="narrative-summary">{{ session_data.llm_narrative | safe }}</div>
-                    </div>
-                </div>
-
-                <div class="chat-full">
-                    <div class="chat-header">
-                        <h2><i data-lucide="messages-square"></i> Diagnostic Assistant</h2>
-                        <button class="btn btn-sm btn-secondary" id="clear-chat"><i data-lucide="trash-2"></i> Clear</button>
-                    </div>
-                    <div class="chat-messages-full" id="chat-messages">
-                        <div class="chat-message assistant">
-                            <div class="msg-avatar"><i data-lucide="bot"></i></div>
-                            <div class="message-bubble">Hello - I've reviewed the predictions for this case. Ask me anything about the findings.</div>
+                    <div class="summary-panel">
+                        <h3 class="panel-title"><i data-lucide="activity"></i> CNN Pathology Predictions</h3>
+                        <div class="top-prediction">
+                            <div class="model-stat-header">
+                                <span class="m-name"><i data-lucide="brain" class="text-purple"></i> CNN - Top: {{ session_data.cnn_prediction }}</span>
+                                <span class="badge bg-purple-tint text-purple">{{ (session_data.cnn_confidence * 100) | round(1) }}%</span>
+                            </div>
+                            <div class="stat-progress-bar">
+                                <div class="stat-progress-fill bg-purple" style="width: {{ session_data.cnn_confidence * 100 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="pathology-strip">
+                            {% for cls, prob in session_data.cnn_probs %}
+                            <div class="pill-row">
+                                <span class="pill-label">{{ cls | replace('_', ' ') | title }}</span>
+                                <span class="pill-bar-bg"><span class="pill-bar-fill" style="width:{{ (prob * 100) | round(1) }}%"></span></span>
+                                <span class="pill-pct {% if prob >= 0.3 %}pct-high{% elif prob >= 0.1 %}pct-mid{% endif %}">{{ (prob * 100) | round(1) }}%</span>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
-                    <form class="chat-input-full" id="chat-form">
-                        <input type="text" id="chat-input" placeholder="Ask about the findings..." required>
-                        <button type="submit" class="btn btn-primary btn-icon" aria-label="Send"><i data-lucide="send"></i></button>
-                    </form>
+                </div>
+
+                <div class="summary-panel summary-fullwidth">
+                    <h3 class="panel-title"><i data-lucide="file-text"></i> AI Summary</h3>
+                    <div class="narrative-content" id="narrative-summary">{{ session_data.llm_narrative | safe }}</div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
-    <script>
-        const CURRENT_SESSION_ID = {{ current_session_id }};
-    </script>
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
-    <!-- Theme Toggle Script -->
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-</body>
-</html>
+            <div class="chat-full">
+                <div class="chat-header">
+                    <h2><i data-lucide="messages-square"></i> Diagnostic Assistant</h2>
+                    <button class="btn btn-sm btn-secondary" id="clear-chat"><i data-lucide="trash-2"></i> Clear</button>
+                </div>
+                <div class="chat-messages-full" id="chat-messages">
+                    <div class="chat-message assistant">
+                        <div class="msg-avatar"><i data-lucide="bot"></i></div>
+                        <div class="message-bubble">Hello - I've reviewed the predictions for this case. Ask me anything about the findings.</div>
+                    </div>
+                </div>
+                <form class="chat-input-full" id="chat-form">
+                    <input type="text" id="chat-input" placeholder="Ask about the findings..." required>
+                    <button type="submit" class="btn btn-primary btn-icon" aria-label="Send"><i data-lucide="send"></i></button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}
+{% block snackbar %}
+<div class="snackbar-region" id="snackbar-region" aria-live="polite" aria-atomic="true"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+    const CURRENT_SESSION_ID = {{ current_session_id }};
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+{% endblock %}
