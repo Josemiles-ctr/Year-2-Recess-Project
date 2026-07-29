@@ -140,15 +140,6 @@ def report_page():
         .all()
     )
 
-    # Generate smart titles: use first meaningful line of narrative, fallback to scan_filename
-    for s in sessions_list:
-        if s.title and s.title != s.scan_filename:
-            # truncate AI-generated title to first meaningful segment
-            if len(s.title) > 80:
-                s.title = s.title[:80].rsplit(".", 1)[0] + "."
-            elif len(s.title) > 120:
-                s.title = s.title[:117] + "..."
-
     return render_template(
         "report.html",
         session_data=session_data,
@@ -267,7 +258,7 @@ def analyze_scan():
             session_obj = ChatSession(
                 user_id=current_user.id,
                 title=response_data.get(
-                    "llm_narrative", response_data["traditional_model"]["prediction"]
+                    "session_title", response_data["traditional_model"]["prediction"]
                 ),
                 scan_filename=file.filename,
                 scan_data=json.dumps(scan_data),

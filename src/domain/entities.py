@@ -37,6 +37,7 @@ class DiagnosticReport:
     traditional_prediction: PredictionResult
     cnn_prediction: PredictionResult
     llm_narrative: str
+    session_title: str = ""
     diagnosed_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
 
 
