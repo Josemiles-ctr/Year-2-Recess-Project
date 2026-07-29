@@ -37,6 +37,7 @@ class AnalyzeController:
                 "per_class_probabilities": cnn_probabilities,
             },
             "llm_narrative": report.llm_narrative,
+            "session_title": report.session_title,
         }
 
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from src.domain.entities import XRayScan, PredictionResult, ChatMessage
 
 
@@ -37,8 +37,10 @@ class LlmServiceGateway(ABC):
     @abstractmethod
     def generate_report_narrative(
         self, traditional_result: PredictionResult, cnn_result: PredictionResult
-    ) -> str:
-        """Injects model diagnostic metrics to compile natural language narrative."""
+    ) -> Tuple[str, str]:
+        """Injects model diagnostic metrics to compile natural language report.
+        Returns (narrative_html, session_title).
+        """
         pass
 
     @abstractmethod
