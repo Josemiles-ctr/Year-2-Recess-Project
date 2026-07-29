@@ -56,5 +56,3 @@ class LlmServiceGateway(ABC):
         Returns (is_chest_xray: bool, reason_or_description: str).
         """
         pass
-
-

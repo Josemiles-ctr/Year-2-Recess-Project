@@ -5,11 +5,13 @@ import datetime
 
 class InvalidImageError(ValueError):
     """Raised when an uploaded file is empty, corrupt, or not a valid image format."""
+
     pass
 
 
 class NotAnXRayError(ValueError):
     """Raised when an uploaded image is valid, but is not a recognized human chest radiograph (X-ray)."""
+
     pass
 
 

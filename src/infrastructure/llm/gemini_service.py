@@ -102,9 +102,7 @@ class GeminiLlmService(LlmServiceGateway):
             candidate = text[start : end + 1]
             try:
                 payload = _json.loads(candidate)
-                narrative = (
-                    payload.get("narrative_html") or payload.get("narrative", "")
-                ).strip()
+                narrative = (payload.get("narrative_html") or payload.get("narrative", "")).strip()
                 title = (payload.get("title") or "").strip()
                 if narrative:
                     return narrative, title
@@ -242,5 +240,7 @@ class GeminiLlmService(LlmServiceGateway):
         except Exception as exc:
             self.logger.exception("Gemini Vision validation call failed for %s", filename)
             # Log error and return false with exception context
-            return False, f"Vision verification service error: {self._friendly_error(exc) if isinstance(exc, genai_errors.ClientError) else str(exc)}"
-
+            return (
+                False,
+                f"Vision verification service error: {self._friendly_error(exc) if isinstance(exc, genai_errors.ClientError) else str(exc)}",
+            )

@@ -72,7 +72,8 @@ class TestSklearnTraditionalModel(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             model_gateway.extract_features(empty_scan)
         self.assertTrue(
-            "empty" in str(ctx.exception).lower() or "unable to decode" in str(ctx.exception).lower()
+            "empty" in str(ctx.exception).lower()
+            or "unable to decode" in str(ctx.exception).lower()
         )
 
         # Corrupt bytes check

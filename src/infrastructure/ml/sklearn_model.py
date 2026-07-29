@@ -57,7 +57,14 @@ class SklearnTraditionalModel(TraditionalModelGateway):
                 raise RuntimeError(f"Trained model not found at {norm_path}")
             # Attempt to fall back to default models directory if relative path differs
             alt_path = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..", "models", "nih_chest_xray_rf_model.joblib")
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "..",
+                    "models",
+                    "nih_chest_xray_rf_model.joblib",
+                )
             )
             if os.path.isfile(alt_path):
                 self._model = joblib.load(alt_path)
