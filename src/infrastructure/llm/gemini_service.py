@@ -75,7 +75,7 @@ class GeminiLlmService(LlmServiceGateway):
             "Produce a concise HTML narrative with sections: Summary of findings, Detailed explanation of model predictions, "
             "Discussion of key features detected, Clinical recommendations and caveats, References to detected radiological patterns. "
             "Return the response as valid JSON with two keys: "
-            '"title" (a very short plain-text label for this scan, 5-10 words, no HTML, not starting with "Summary"), '
+            '"title" (a very short plain-text label for this scan, at most 7 words, no HTML, not starting with "Summary"), '
             'and "narrative_html" (the full report as valid HTML using h3/h4 headings and paragraphs). '
             "Do not hallucinate findings not present in the diagnostic context."
         )
