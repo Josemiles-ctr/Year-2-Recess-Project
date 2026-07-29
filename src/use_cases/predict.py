@@ -40,11 +40,7 @@ class PredictCancerUseCase:
         scan = XRayScan(filename=filename, image_bytes=image_bytes)
         traditional_result = self.traditional_gateway.predict(scan)
         cnn_result = self.cnn_gateway.predict(scan)
-<<<<<<< HEAD
-        narrative = self.llm_gateway.generate_report_narrative(traditional_result, cnn_result)
-=======
         narrative, title = self.llm_gateway.generate_report_narrative(traditional_result, cnn_result)
->>>>>>> 5f5804248f420b87906c28fe0d19c7fbba4a75a9
 
         return DiagnosticReport(
             scan_details=scan,
