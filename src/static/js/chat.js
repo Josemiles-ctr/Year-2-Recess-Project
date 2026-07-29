@@ -416,6 +416,7 @@ function initChatbot() {
     scrollChatToBottom();
 
     clearBtn?.addEventListener('click', async () => {
+        if (!await showConfirmDialog('Are you sure you want to clear all chat messages? This cannot be undone.')) return;
         try {
             await fetch('/api/chat/clear', {
                 method: 'POST',
