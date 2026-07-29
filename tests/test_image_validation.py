@@ -6,13 +6,11 @@ import numpy as np
 
 from src.domain.entities import (
     DiagnosticReport,
-    XRayScan,
     PredictionResult,
     InvalidImageError,
     NotAnXRayError,
 )
 from src.use_cases.predict import PredictCancerUseCase
-from src.infrastructure.llm.gemini_service import GeminiLlmService
 
 
 class TestImageValidation(unittest.TestCase):
