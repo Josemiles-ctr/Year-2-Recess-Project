@@ -68,6 +68,69 @@ function safeMarked(text) {
     return simpleMarkdown(text);
 }
 
+function showConfirmDialog(message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        dialog.setAttribute('role', 'alertdialog');
+        dialog.setAttribute('aria-modal', 'true');
+
+        const header = document.createElement('div');
+        header.className = 'confirm-dialog-header';
+        const icon = document.createElement('i');
+        icon.setAttribute('data-lucide', 'alert-triangle');
+        const title = document.createElement('h3');
+        title.className = 'confirm-dialog-title';
+        title.textContent = 'Confirm action';
+        header.append(icon, title);
+
+        const msg = document.createElement('p');
+        msg.className = 'confirm-dialog-message';
+        msg.textContent = message;
+
+        const actions = document.createElement('div');
+        actions.className = 'confirm-dialog-actions';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'confirm-dialog-btn confirm-dialog-btn-cancel';
+        cancelBtn.textContent = 'Cancel';
+
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'confirm-dialog-btn confirm-dialog-btn-danger';
+        confirmBtn.textContent = 'Delete';
+
+        actions.append(cancelBtn, confirmBtn);
+        dialog.append(header, msg, actions);
+        overlay.append(dialog);
+        document.body.appendChild(overlay);
+        renderIcons();
+        requestAnimationFrame(() => overlay.classList.add('is-visible'));
+
+        const cleanup = (result) => {
+            cancelBtn.removeEventListener('click', onCancel);
+            confirmBtn.removeEventListener('click', onConfirm);
+            overlay.classList.remove('is-visible');
+            overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+            resolve(result);
+        };
+
+        const onCancel = () => cleanup(false);
+        const onConfirm = () => cleanup(true);
+
+        cancelBtn.addEventListener('click', onCancel);
+        confirmBtn.addEventListener('click', onConfirm);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) cleanup(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') cleanup(false);
+        }, { once: true });
+    });
+}
+
 function renderMarkdownMessages() {
     document.querySelectorAll('.chat-message.assistant .message-bubble').forEach(el => {
         if (!el.querySelector('h1, h2, h3, h4, h5, h6, p, ul, ol, hr') && !/<[a-z][\s\S]*>/i.test(el.innerHTML)) {
@@ -146,7 +209,7 @@ function initSidebar() {
                 const sid = delBtn.getAttribute('data-sid');
                 if (!sid) return;
 
-                if (confirm('Are you sure you want to delete this scan session?')) {
+                if (await showConfirmDialog('Are you sure you want to delete this scan session?')) {
                     try {
                         const resp = await fetch(`/api/sessions/${sid}`, { method: 'DELETE' });
                         if (resp.ok) {

@@ -145,6 +145,8 @@ def report_page():
         session_data=session_data,
         sessions=sessions_list,
         current_session_id=session_obj.id,
+        session_title=session_obj.title,
+        scan_filename=session_obj.scan_filename,
     )
 
 

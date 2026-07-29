@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}AuraScan - Report{% endblock %}
+{% block title %}{{ session_title }} — {{ scan_filename }}{% endblock %}
 {% block header %}{% endblock %}
 {% block content %}
 <div class="report-app">
@@ -38,8 +38,8 @@
         <header class="rm-header">
             <button class="btn btn-icon rs-toggle" id="rs-toggle" aria-label="Toggle sidebar"><i data-lucide="panel-left"></i></button>
             <div class="rm-header-info">
-                <h1 class="rm-title"><span class="logo-highlight">AuraScan</span> Report</h1>
-                <span class="rm-subtitle">{{ session_data.scan_filename }}</span>
+                <h1 class="rm-title">{{ session_title }}</h1>
+                <span class="rm-subtitle">{{ scan_filename }}</span>
             </div>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
