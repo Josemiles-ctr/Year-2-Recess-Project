@@ -218,11 +218,12 @@ class KerasCnnModel(CnnModelGateway):
         top_label = max(detected, key=detected.get) if detected else "No Finding"
         top_conf = probs.get(top_label, 0.0)
 
+        # Construct final prediction result using visual pattern analysis output
         return PredictionResult(
             prediction_label=top_label,
             confidence_score=round(top_conf, 4),
             per_class_probabilities=probs,
-            model_type="Keras CNN (NIH Chest X-Ray)",
+            model_type="Visual Pattern Analysis",
         )
 
     def generate_grad_cam(self, scan: XRayScan) -> str:

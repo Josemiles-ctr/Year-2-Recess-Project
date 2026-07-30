@@ -433,7 +433,7 @@ function initChatbot() {
             chatMessages.innerHTML = `
                 <div class="chat-message assistant">
                     <div class="msg-avatar"><i data-lucide="bot"></i></div>
-                    <div class="message-bubble">Hello - I've reviewed the predictions for this case. Ask me anything about the findings.</div>
+                    <div class="message-bubble">Hello — I have reviewed the anatomical and biological findings for this scan. Feel free to ask any questions about the observations or clinical recommendations.</div>
                 </div>`;
             renderIcons();
         } catch { }
