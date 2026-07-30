@@ -101,9 +101,7 @@ class GeminiLlmService(LlmServiceGateway):
             candidate = text[start : end + 1]
             try:
                 payload = _json.loads(candidate)
-                narrative = (
-                    payload.get("narrative_html") or payload.get("narrative", "")
-                ).strip()
+                narrative = (payload.get("narrative_html") or payload.get("narrative", "")).strip()
                 title = (payload.get("title") or "").strip()
                 if narrative:
                     return narrative, title

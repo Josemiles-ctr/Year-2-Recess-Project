@@ -1,6 +1,7 @@
 from src.domain.entities import XRayScan, PredictionResult
 from src.interfaces.gateways import CnnModelGateway
 
+
 class PyTorchCnnModel(CnnModelGateway):
     """Approach 2: Deep Learning CNN (PyTorch).
 
