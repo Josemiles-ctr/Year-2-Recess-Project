@@ -163,10 +163,11 @@ class SklearnTraditionalModel(TraditionalModelGateway):
             "edge_density": float(cv2.Canny(img, 100, 200).mean() > 0),
         }
 
+        # Construct final prediction result using feature-based analysis output
         return PredictionResult(
             prediction_label=top_label,
             confidence_score=round(top_conf, 4),
             extracted_features=features_out,
-            model_type="Random Forest (NIH Chest X-Ray)",
+            model_type="Feature-Based Analysis",
             per_class_probabilities=prob_dict,
         )
