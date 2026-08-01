@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Dict
+from typing import Dict, Any
 
 import joblib
 import numpy as np
@@ -34,14 +34,43 @@ TABULAR_FEATURES = 13
 TOTAL_FEATURES = PIXEL_FEATURES + TABULAR_FEATURES
 
 
+FEATURE_KEYS = ["feature_vector"]
+
+
 class SklearnTraditionalModel(TraditionalModelGateway):
-    def __init__(self, model_path: str = ""):
+    """Random Forest model gateway for chest X-ray classification using extracted pixel and tabular features."""
+
+    def __init__(self, model_path: str = "", model: Any = None, enable_fallback: bool = True):
+        # 1. Support direct injection of an external scikit-learn classifier
+        if model is not None:
+            self._model = model
+            return
+
+        # 2. Resolve default model path if not specified
         if not model_path:
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
             model_path = os.path.join(root, "models", "nih_chest_xray_rf_model.joblib")
+
         norm_path = os.path.abspath(model_path)
         if not os.path.isfile(norm_path):
+            if not enable_fallback:
+                raise RuntimeError(f"Trained model not found at {norm_path}")
+            # Attempt to fall back to default models directory if relative path differs
+            alt_path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "..",
+                    "models",
+                    "nih_chest_xray_rf_model.joblib",
+                )
+            )
+            if os.path.isfile(alt_path):
+                self._model = joblib.load(alt_path)
+                return
             raise FileNotFoundError(f"Trained model not found at {norm_path}")
+
         self._model = joblib.load(norm_path)
 
     def _load_image(self, image_bytes: bytes) -> np.ndarray:
@@ -100,10 +129,25 @@ class SklearnTraditionalModel(TraditionalModelGateway):
         tabs = self._tabular_features(img)
         feature_vector = np.concatenate([pixels, tabs]).reshape(1, -1)
 
+        # Safely extract per-class probabilities handling both MultiOutput lists and 2D ndarrays
         probs = self._model.predict_proba(feature_vector)
         prob_dict = {}
         for i, cls_name in CLASS_LABELS.items():
-            prob_dict[cls_name] = float(probs[i][0][1]) if isinstance(probs[i], np.ndarray) else 0.0
+            if isinstance(probs, list) and i < len(probs):
+                item = probs[i]
+                if isinstance(item, np.ndarray) and item.ndim == 2 and item.shape[1] > 1:
+                    prob_dict[cls_name] = float(item[0][1])
+                elif isinstance(item, np.ndarray) and item.ndim == 2:
+                    prob_dict[cls_name] = float(item[0][0])
+                else:
+                    prob_dict[cls_name] = 0.0
+            elif isinstance(probs, np.ndarray):
+                if probs.ndim == 2 and i < probs.shape[1]:
+                    prob_dict[cls_name] = float(probs[0, i])
+                else:
+                    prob_dict[cls_name] = 0.0
+            else:
+                prob_dict[cls_name] = 0.0
 
         detected = {c: p for c, p in prob_dict.items() if p >= 0.5 and c != "No Finding"}
         if detected:

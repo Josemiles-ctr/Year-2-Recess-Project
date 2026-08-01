@@ -169,16 +169,17 @@ Shape, mean, and median are essentially unchanged — expected since only 16 row
 
 ```python
 # Age binning
-df['Age_Group'] = pd.cut(df['Patient Age'], bins=[0, 12, 30, 60, 120],
-                          labels=['Child', 'Young Adult', 'Adult', 'Senior'])
+df["Age_Group"] = pd.cut(
+    df["Patient Age"], bins=[0, 12, 30, 60, 120], labels=["Child", "Young Adult", "Adult", "Senior"]
+)
 
 # Visit frequency
-df['Visits_Per_Patient'] = df.groupby('Patient ID')['Patient ID'].transform('count')
+df["Visits_Per_Patient"] = df.groupby("Patient ID")["Patient ID"].transform("count")
 
 # One-hot encoding
-gender_ohe = pd.get_dummies(df['Patient Gender'], prefix='Gender')
-view_ohe = pd.get_dummies(df['View Position'], prefix='View')
-age_group_ohe = pd.get_dummies(df['Age_Group'], prefix='AgeGrp')
+gender_ohe = pd.get_dummies(df["Patient Gender"], prefix="Gender")
+view_ohe = pd.get_dummies(df["View Position"], prefix="View")
+age_group_ohe = pd.get_dummies(df["Age_Group"], prefix="AgeGrp")
 ```
 
 ### Image Features

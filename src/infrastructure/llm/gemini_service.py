@@ -4,6 +4,7 @@ import re
 from typing import Any, Dict, List
 
 from google import genai
+from google.genai import types
 from google.genai import errors as genai_errors
 
 from src.domain.entities import ChatMessage, PredictionResult
@@ -178,3 +179,68 @@ class GeminiLlmService(LlmServiceGateway):
         if code == 404:
             return "The AI model is not available. The service may be updating."
         return "The AI service returned an unexpected error. Please try again later."
+
+    def validate_chest_xray(self, image_bytes: bytes, filename: str = "") -> tuple[bool, str]:
+        """Validate whether an image is a human chest radiograph using Gemini Vision multimodal capabilities.
+
+        Args:
+            image_bytes: Raw binary content of the uploaded image file.
+            filename: Optional filename used for context logging.
+
+        Returns:
+            Tuple of (is_chest_xray: bool, reason: str).
+        """
+        if not image_bytes:
+            return False, "The uploaded file is empty."
+
+        import io
+        import json
+        from PIL import Image
+
+        # 1. Determine image MIME type via Pillow header inspection
+        mime_type = "image/jpeg"
+        try:
+            with Image.open(io.BytesIO(image_bytes)) as img:
+                fmt = (img.format or "JPEG").lower()
+                if fmt == "jpg":
+                    fmt = "jpeg"
+                mime_type = f"image/{fmt}"
+        except Exception:
+            mime_type = "image/jpeg"
+
+        # 2. Prepare structured system prompt for vision-based anatomical assessment
+        prompt = (
+            "You are an expert radiology AI system evaluating image suitability for chest X-ray screening.\n"
+            "Analyze the provided image and determine if it is a human chest radiograph (Chest X-Ray scan).\n"
+            "Confirm the presence of thoracic anatomy (lungs, rib cage, heart silhouette, spine, or clavicles).\n"
+            "Reject non-medical images (e.g. pets, scenery, graphics, documents, text) and non-chest scans (e.g. brain MRI, extremity X-ray, abdominal ultrasound).\n\n"
+            "Return strictly valid JSON with the following two keys:\n"
+            '{\n  "is_chest_xray": boolean,\n  "reason": "1-2 sentence explanation of why it is or is not a chest X-ray"\n}'
+        )
+
+        try:
+            # 3. Construct multimodal input part and call Gemini models API
+            image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+            resp = self.client.models.generate_content(
+                model=self.model,
+                contents=[image_part, prompt],
+            )
+            text = resp.text.strip() if resp.text else ""
+
+            # 4. Parse structured JSON output from Gemini response
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end > start:
+                payload = json.loads(text[start : end + 1])
+                is_xray = bool(payload.get("is_chest_xray", False))
+                reason = str(payload.get("reason", "Validation check completed."))
+                return is_xray, reason
+
+            return False, "Could not parse verification response from vision service."
+        except Exception as exc:
+            self.logger.exception("Gemini Vision validation call failed for %s", filename)
+            # Log error and return false with exception context
+            return (
+                False,
+                f"Vision verification service error: {self._friendly_error(exc) if isinstance(exc, genai_errors.ClientError) else str(exc)}",
+            )
